@@ -97,8 +97,8 @@ function SellBag()
 end
 
 function SellAll()
-  --SellIndividual()
-  SellUninscribed()
+  SellIndividual()
+  -- SellUninscribed()
   --SellBags(1, 8)
 end
 
@@ -110,7 +110,6 @@ function SellRoutine()
   print("Move MMDs to last pack")
   MoveMMDs()
 
-  SellAll()
   SellAll()
   --await(game.Actions.VendorSellAll())
 

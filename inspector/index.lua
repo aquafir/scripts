@@ -6,6 +6,9 @@ local ltable = require('lua_table')
 --ltable.patch(table, ltable)
 --ltable.patch(_G, ltable) --environment
 
+local json = require("json")
+
+json.encode()
 ---------------------
 ---- State ----
 ---------------------
@@ -372,7 +375,7 @@ end
 -- called before our window is registered. you can set window options here
 local onPreRender = function()
   -- set minimum window size
-  IM.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize)
+  -- IM.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize)
 end
 
 -- called during the hud window render. draw your ui here
@@ -431,6 +434,7 @@ end
 hud.showInBar = true
 hud.OnPreRender.Add(onPreRender);
 hud.OnRender.Add(onRender);
+hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
 
 -- subscribe to every incoming / outgoing "io"
 --game.World.OnObjectSelected.Add(OnSelect)

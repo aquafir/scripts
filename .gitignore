@@ -1,1 +1,3 @@
 settings.default.json
+**/*.txt
+**/**/*.txt

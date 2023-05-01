@@ -32,14 +32,14 @@ local transaction = { AshCoin = 0, Luminance = 0, MMD = 0 }
 ---@param name string Account name
 ---@param number number Account number
 function LoadAccounts()
-    if not fs.FileExists("files.txt") then
-        print("Creating files.txt")
-        fs.WriteText("files.txt", "")
+    if not fs.FileExists("accounts.txt") then
+        print("Creating accounts.txt")
+        fs.WriteText("accounts.txt", "")
     else
         print("Loading accounts...")
     end
 
-    for _, line in ipairs(fs.ReadLines("files.txt")) do
+    for _, line in ipairs(fs.ReadLines("accounts.txt")) do
         local acct = split(line, ",")
         if #acct == 2 then
             print(acct[1] .. ": " .. acct[2])
@@ -230,7 +230,7 @@ local OnChat = function(evt)
             local acct = game.Character.Weenie.Name .. "," .. tostring(match)
             print("Adding: " .. acct)
             accounts[game.Character.Weenie.Name] = tostring(match)
-            fs.AppendText("files.txt", "\n" .. game.Character.Weenie.Name .. "," .. tostring(match))
+            fs.AppendText("accounts.txt", "\n" .. game.Character.Weenie.Name .. "," .. tostring(match))
             accountCombo = ltable.keys(accounts)
         end
         --Strip commas cause parsing numbers sucks
