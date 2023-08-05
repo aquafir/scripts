@@ -1,8 +1,8 @@
 -----------------------LIBS-------------------------
 -- local ac = require("acclient")               -- 3d/2d graphics and coordinates
 -- local fs = require("filesystem").GetScript() -- File system
-local ImGui = require("imgui")
-local IM = ImGui ~= nil and ImGui.ImGui or {}
+local IM = require("imgui")
+local ImGui = IM ~= nil and IM.ImGui or {}
 local views = require("utilitybelt.views")
 local hud   = nil ---@type Hud|nil
 
@@ -32,14 +32,14 @@ local foo = 100
 -------------------RENDER EVENTS--------------------
 -- Called each time this hud should render.  Render controls here
 local OnHudRender = function()
-  local scaleInputChanged, scaleResult = IM.DragFloat("Scale", scale, 0.001, 0.001, 1)
+  local scaleInputChanged, scaleResult = ImGui.DragFloat("Scale", scale, 0.001, 0.001, 1)
   if scaleInputChanged then scale = scaleResult end
 
-  local colorInputChanged, colorResult = IM.ColorPicker4("Color", IM.ColToVec4(color), ImGui.ImGuiColorEditFlags.AlphaBar)
-  if colorInputChanged then color = IM.Vec4ToCol(colorResult) end
+  local colorInputChanged, colorResult = ImGui.ColorPicker4("Color", ImGui.ColToVec4(color), IM.ImGuiColorEditFlags.AlphaBar)
+  if colorInputChanged then color = ImGui.Vec4ToCol(colorResult) end
 
   --If you set an alpha in the PreRender it applies to all script windows, so reset it after rendering
-  IM.PushStyleVar(ImGui.ImGuiStyleVar.Alpha, 1)
+  ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 1)
 end
 
 -- function OnRender2D()
@@ -51,11 +51,11 @@ function OnPreRender()
   -- ImGui.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize);
   
   --Force a size / position in the center
-  IM.SetWindowSize(Vector2.new(300, 300))
-  IM.SetNextWindowPos(Vector2.new(IM.GetWindowViewport().Size.X/2-150, IM.GetWindowViewport().Size.Y/2-150))
+  ImGui.SetWindowSize(Vector2.new(300, 300))
+  ImGui.SetNextWindowPos(Vector2.new(ImGui.GetWindowViewport().Size.X/2-150, ImGui.GetWindowViewport().Size.Y/2-150))
 
   --Set an alpha (make sure to remove after Render)
-  IM.PushStyleVar(ImGui.ImGuiStyleVar.Alpha, 0.5)
+  ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 0.5)
 end
 
 
@@ -69,7 +69,7 @@ function Init()
   hud.Visible = true
 
   --Style
-  hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
+  hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
                     --  + ImGui.ImGuiWindowFlags.NoDecoration     -- Borderless
                     --  + ImGui.ImGuiWindowFlags.NoBackground     -- No BG
 

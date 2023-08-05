@@ -1,8 +1,8 @@
 -----------------------LIBS-------------------------
 -- local ac = require("acclient")               -- 3d/2d graphics and coordinates
 -- local fs = require("filesystem").GetScript() -- File system
-local ImGui = require("imgui")
-local IM    = ImGui ~= nil and ImGui.ImGui or {}
+local IM = require("imgui")
+local ImGui    = IM ~= nil and IM.ImGui or {}
 local views = require("utilitybelt.views")
 local hud   = nil ---@type Hud|nil
 
@@ -53,9 +53,9 @@ end
 -------------------RENDER EVENTS--------------------
 -- Called each time this hud should render.  Render controls here
 local OnHudRender = function()
-  if IM.Button("Find") then GetMatches() end
-  IM.SameLine()
-  if IM.Button("Use Found") then
+  if ImGui.Button("Find") then GetMatches() end
+  ImGui.SameLine()
+  if ImGui.Button("Use Found") then
     for _, wo in pairs(found) do
     -- for _, wo in pairs(game.Character.Inventory) do
       wo.Use()
@@ -66,7 +66,7 @@ local OnHudRender = function()
   end
 
   for _, wo in pairs(found) do
-    IM.Text(wo.Name)
+    ImGui.Text(wo.Name)
   end
 end
 
@@ -85,7 +85,7 @@ function Init()
   hud.Visible = true
 
   -- Size to fit
-  hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
+  hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
   -- Alternatively use a size range in prerender
   -- hud.OnPreRender.Add(OnPreRender)
 

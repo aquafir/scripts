@@ -1,8 +1,8 @@
 -----------------------LIBS-------------------------
 -- local ac = require("acclient")               -- 3d/2d graphics and coordinates
 local fs     = require("filesystem").GetScript() -- File system
-local ImGui  = require("imgui")
-local IM     = ImGui.ImGui;
+local IM  = require("imgui")
+local ImGui     = IM.ImGui;
 local views  = require("utilitybelt.views")
 local hud    = nil ---@type Hud|nil
 local ltable = require("lua_table")
@@ -75,12 +75,12 @@ end
 -------------------RENDER EVENTS--------------------
 -- Called before our window is registered
 function OnPreRender()
-    ImGui.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize);
+    IM.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize);
 end
 
 ---Select account from combo
 function RenderAccounts()
-    local valueChanged, newValue = IM.Combo("Accounts", selectedAccount - 1, accountCombo, #accountCombo)
+    local valueChanged, newValue = ImGui.Combo("Accounts", selectedAccount - 1, accountCombo, #accountCombo)
     if valueChanged then
         selectedAccount = newValue + 1 --Lua why you do this :( stick with a starting index
         -- print("Selected " .. selectedAccount)
@@ -91,12 +91,12 @@ end
 function RenderTransaction()
     for key, value in pairs(balance) do
         --Slider
-        local changed, newAmount = IM.SliderInt(tostring(key), transaction[key], carried[key] * -1, value)
+        local changed, newAmount = ImGui.SliderInt(tostring(key), transaction[key], carried[key] * -1, value)
         if changed then
             transaction[key] = clamp(newAmount, carried[key] * -1, value)
         end
         --Input/Buttons
-        local changed, newAmount = IM.InputInt(tostring(key) .. "(" .. carried[key] * -1 .. " to " .. value .. ")",
+        local changed, newAmount = ImGui.InputInt(tostring(key) .. "(" .. carried[key] * -1 .. " to " .. value .. ")",
         transaction[key])
         if changed then transaction[key] = clamp(newAmount, carried[key] * -1, value) end
     end
@@ -107,7 +107,7 @@ function RenderButtons()
     local selfSelected = accountCombo[selectedAccount] == game.Character.Weenie.Name
     local label = "Done"
     if not selfSelected then label = "Send" end
-    if IM.Button(label) then
+    if ImGui.Button(label) then
         -- print(tostring(accountCombo[selectedAccount]))
         -- Self
         if selfSelected then
@@ -178,21 +178,21 @@ function RenderButtons()
             end
         end
     end
-    IM.SameLine()
-    if IM.Button("All") then game.Actions.InvokeChat("/bank deposit all") end
-    IM.SameLine()
-    if IM.Button("Reset") then
+    ImGui.SameLine()
+    if ImGui.Button("All") then game.Actions.InvokeChat("/bank deposit all") end
+    ImGui.SameLine()
+    if ImGui.Button("Reset") then
         Refresh()
         ResetTransaction()
     end
-    local changed, newAmount = IM.InputInt("Threshold", autoDepositThreshold)
+    local changed, newAmount = ImGui.InputInt("Threshold", autoDepositThreshold)
     if changed then autoDepositThreshold = newAmount end
     --IM.SameLine()
-    if IM.Checkbox("AutoDeposit", autoDeposit) then autoDeposit = not autoDeposit end
-    IM.SameLine()
-    if IM.Checkbox("Coins", coinMode) then coinMode = not coinMode end
-    IM.SameLine()
-    if IM.Checkbox("Test", test) then test = not test end
+    if ImGui.Checkbox("AutoDeposit", autoDeposit) then autoDeposit = not autoDeposit end
+    ImGui.SameLine()
+    if ImGui.Checkbox("Coins", coinMode) then coinMode = not coinMode end
+    ImGui.SameLine()
+    if ImGui.Checkbox("Test", test) then test = not test end
 end
 
 -- Called each time this hud should render.  Render controls here
@@ -280,7 +280,7 @@ function Init()
     if autoDeposit then game.World.OnTick.Add(AutoDeposit) end
 
     -- Size to fit
-    hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
+    hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
     -- Alternatively use a size range in prerender
     hud.OnPreRender.Add(OnPreRender)
 end

@@ -1,8 +1,8 @@
 -----------------------LIBS-------------------------
 -- local ac = require("acclient")               -- 3d/2d graphics and coordinates
 -- local fs = require("filesystem").GetScript() -- File system
-local ImGui = require("imgui")
-local IM = ImGui ~= nil and ImGui.ImGui or {}
+local IM = require("imgui")
+local ImGui = IM ~= nil and IM.ImGui or {}
 local views = require("utilitybelt.views")
 local hud   = nil ---@type Hud|nil
 
@@ -34,11 +34,11 @@ local color = 0x11EECCAA ---@type number|nil (AARRGGBB)
 -------------------RENDER EVENTS--------------------
 -- Called each time this hud should render.  Render controls here
 local OnHudRender = function()
-  local scaleInputChanged, scaleResult = IM.DragFloat("Scale", scale, 0.001, 0.001, 1)
+  local scaleInputChanged, scaleResult = ImGui.DragFloat("Scale", scale, 0.001, 0.001, 1)
   if scaleInputChanged then scale = scaleResult end
 
-  local colorInputChanged, colorResult = IM.ColorPicker4("Color", IM.ColToVec4(color), ImGui.ImGuiColorEditFlags.AlphaBar)
-  if colorInputChanged then color = IM.Vec4ToCol(colorResult) end
+  local colorInputChanged, colorResult = ImGui.ColorPicker4("Color", ImGui.ColToVec4(color), IM.ImGuiColorEditFlags.AlphaBar)
+  if colorInputChanged then color = ImGui.Vec4ToCol(colorResult) end
 end
 
 -- function OnRender2D()
@@ -60,7 +60,7 @@ function Init()
   hud.Visible = true
 
   -- Size to fit
-  hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
+  hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
   -- Alternatively use a size range in prerender
   -- hud.OnPreRender.Add(OnPreRender)
 

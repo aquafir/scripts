@@ -1,5 +1,5 @@
-local ImGui = require("imgui")
-local IM = ImGui ~= nil and ImGui.ImGui or {}
+local IM = require("imgui")
+local ImGui = IM ~= nil and IM.ImGui or {}
 local views = require("utilitybelt.views")
 local hud = views.Huds.CreateHud("Inspector")
 local ltable = require('lua_table')
@@ -55,82 +55,82 @@ local maxWindowSize = Vector2.new(999999, 999999)
 --- render a melee weapon info Panel
 ---@param weenie WorldObject
 function RenderMeleeWeapon(weenie)
-  IM.Text(weenie.Name)
-  IM.Text("Damage: " .. weenie.Value(IntId.Damage))
+  ImGui.Text(weenie.Name)
+  ImGui.Text("Damage: " .. weenie.Value(IntId.Damage))
 end
 
 --- render a missile weapon info Panel
 ---@param weenie WorldObject
 function RenderMissileWeapon(weenie)
-  IM.Text(weenie.Name)
-  IM.Text("Damage: " .. weenie.Value(IntId.Damage))
-  IM.Text("Range: " .. weenie.Value(IntId.WeaponRange))
+  ImGui.Text(weenie.Name)
+  ImGui.Text("Damage: " .. weenie.Value(IntId.Damage))
+  ImGui.Text("Range: " .. weenie.Value(IntId.WeaponRange))
 end
 
 --- render a generic item info Panel
 function RenderDefaultItem()
   if selected.Id > 0 then
-    IM.Text(tostring(selected.Name))
-    IM.Text("ObjectClass: " .. tostring(selected.ObjectClass))
-    IM.SameLine(200)
-    IM.Text("ClassId: " .. tostring(selected.ClassId))
-    IM.SameLine(400)
-    IM.Text("WeenieClassId: " .. tostring(selected.WeenieClassId))
+    ImGui.Text(tostring(selected.Name))
+    ImGui.Text("ObjectClass: " .. tostring(selected.ObjectClass))
+    ImGui.SameLine(200)
+    ImGui.Text("ClassId: " .. tostring(selected.ClassId))
+    ImGui.SameLine(400)
+    ImGui.Text("WeenieClassId: " .. tostring(selected.WeenieClassId))
   end
 end
 
 --- render a tab group of all weenie props
 function RenderPropTabs()
   --IM.Text("All properties:")
-  IM.BeginTabBar("weenie_props_" .. tostring(selected.Id))
+  ImGui.BeginTabBar("weenie_props_" .. tostring(selected.Id))
 
   --Special handling for some object classes?
   -- if weenie.ObjectClass == ObjectClass.Player then RenderPlayerTabs(weenie) end
 
-  local size = IM.GetContentRegionAvail()
+  local size = ImGui.GetContentRegionAvail()
   size.Y = size.Y - 30
 
   for propKey, i in propTypes do
     -- for i, propKey in ipairs(propTypes) do
     --Properties of a type
-    if IM.BeginTabItem(propKey) then
-      IM.BeginChild(selected.Id, size)
+    if ImGui.BeginTabItem(propKey) then
+      ImGui.BeginChild(selected.Id, size)
       if selected.Id > 0 then
         RenderPropTable(propKey)
       end
-      IM.EndChild()
-      IM.EndTabItem()
+      ImGui.EndChild()
+      ImGui.EndTabItem()
     end
   end
-  IM.EndTabBar()
+  ImGui.EndTabBar()
 end
 
 ---Draws table for the table corresponding to the property type in the edited WorldObject
 ---@param propType string
 function RenderPropTable(propType)
   --Setup
-  local tableFlags = ImGui.ImGuiTableFlags.Resizable
-  local colFlags = ImGui.ImGuiTableColumnFlags.PreferSortAscending
-  IM.BeginTable(propType, 2, tableFlags)
+  local tableFlags = IM.ImGuiTableFlags.Resizable
+  local colFlags = IM.ImGuiTableColumnFlags.PreferSortAscending
+  ImGui.BeginTable(propType, 2, tableFlags)
   --Header
-  IM.TableSetupColumn("Key", colFlags, 200, 1);
-  IM.TableSetupColumn("Value", colFlags, 200, 2);
-  IM.TableHeadersRow();
+  ImGui.TableSetupColumn("Key", colFlags, 200, 1);
+  ImGui.TableSetupColumn("Value", colFlags, 200, 2);
+  ImGui.TableHeadersRow();
 
   for propKey, propValue in pairsByKeys(edit[propType]) do
     -- for propKey, propValue in pairs(edit[propType]) do
-    IM.PushID(tostring(propKey))
+    ImGui.PushID(tostring(propKey))
 
-    IM.TableNextColumn()
-    IM.Text(tostring(propKey))
+    ImGui.TableNextColumn()
+    ImGui.Text(tostring(propKey))
 
-    IM.TableNextColumn()
+    ImGui.TableNextColumn()
     RenderKeyInput(propType, propKey, propValue)
 
-    IM.TableNextRow()
-    IM.PopID()
+    ImGui.TableNextRow()
+    ImGui.PopID()
   end
-  IM.EndTable()
+  ImGui.EndTable()
 end
 
 ---Creates input corresponding to a type of property (and maybe key?)
@@ -141,16 +141,16 @@ function RenderKeyInput(propType, propKey, propValue)
   -- { "IntValues", "Int64Values", "StringValues", "BoolValues", "FloatValues", "InstanceValues", "DataValues" }
   local changed, newAmount
   if propType:find("Int") then
-    changed, newAmount = IM.InputInt("", propValue)
+    changed, newAmount = ImGui.InputInt("", propValue)
   elseif propType:find("Float") then
-    changed, newAmount = IM.InputFloat("", propValue)
+    changed, newAmount = ImGui.InputFloat("", propValue)
   elseif propType:find("String") then
-    changed, newAmount = IM.InputText("", propValue, 1000)
+    changed, newAmount = ImGui.InputText("", propValue, 1000)
   elseif propType:find("Bool") then
     --    if v == true then print("!!") else print("??") end
-    changed, newAmount = IM.Checkbox("", propValue)
+    changed, newAmount = ImGui.Checkbox("", propValue)
   else
-    changed, newAmount = IM.Text(tostring(propValue))
+    changed, newAmount = ImGui.Text(tostring(propValue))
   end
 
   if changed then
@@ -161,20 +161,20 @@ end
 
 --- todo
 function RenderFilters()
-  local inputFlags = ImGui.ImGuiInputTextFlags.AutoSelectAll or ImGui.ImGuiInputTextFlags.AllowTabInput
-  IM.BeginChild("Filters", Vector2.new(IM.GetWindowWidth(), 40), true, ImGui.ImGuiWindowFlags.AlwaysAutoResize)
-  local filterTextChanged, newFilterText = IM.InputText("Key", keyFilter, 500, inputFlags)
+  local inputFlags = IM.ImGuiInputTextFlags.AutoSelectAll or IM.ImGuiInputTextFlags.AllowTabInput
+  ImGui.BeginChild("Filters", Vector2.new(ImGui.GetWindowWidth(), 40), true, IM.ImGuiWindowFlags.AlwaysAutoResize)
+  local filterTextChanged, newFilterText = ImGui.InputText("Key", keyFilter, 500, inputFlags)
   if filterTextChanged then
     keyFilter = newFilterText
     ApplyFilter()
   end
-  IM.SameLine(250)
-  filterTextChanged, newFilterText = IM.InputText("Value", valueFilter, 500, inputFlags)
+  ImGui.SameLine(250)
+  filterTextChanged, newFilterText = ImGui.InputText("Value", valueFilter, 500, inputFlags)
   if filterTextChanged then
     valueFilter = newFilterText
     ApplyFilter()
   end
-  IM.EndChild()
+  ImGui.EndChild()
 end
 
 function ApplyFilter()
@@ -244,13 +244,13 @@ function RenderSelected(weenie)
 
   RenderDefaultItem()
 
-  IM.Separator()
+  ImGui.Separator()
   RenderFilters()
 
-  IM.Separator()
+  ImGui.Separator()
   RenderPropTabs()
 
-  IM.Separator()
+  ImGui.Separator()
   RenderButtons()
 
   --   IM.EndChild()
@@ -260,47 +260,47 @@ end
 
 ---todo
 function RenderPlayerTabs()
-  if IM.BeginTabItem("Attributes") then
-    IM.BeginChild(selected.Id, IM.GetContentRegionAvail())
+  if ImGui.BeginTabItem("Attributes") then
+    ImGui.BeginChild(selected.Id, ImGui.GetContentRegionAvail())
     for propId, propValue in pairs(selected.Attributes) do
-      IM.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue.InitLevel)
+      ImGui.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue.InitLevel)
     end
     for propId, propValue in pairs(selected.Vitals) do
-      IM.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue.InitLevel)
+      ImGui.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue.InitLevel)
     end
-    IM.EndChild()
-    IM.EndTabItem()
+    ImGui.EndChild()
+    ImGui.EndTabItem()
   end
 
-  if IM.BeginTabItem("Skills") then
-    IM.BeginChild(selected.Id, IM.GetContentRegionAvail())
+  if ImGui.BeginTabItem("Skills") then
+    ImGui.BeginChild(selected.Id, ImGui.GetContentRegionAvail())
     for propId, propValue in pairs(selected.Skills) do
-      IM.Text(tostring(propId) ..
+      ImGui.Text(tostring(propId) ..
         ": " .. tostring(propValue.SkillState) .. " - " .. propValue.Current .. " - " .. propValue.Base)
     end
-    IM.EndChild()
-    IM.EndTabItem()
+    ImGui.EndChild()
+    ImGui.EndTabItem()
   end
 end
 
 ---todo
 function RenderButtons()
   --Commit changes
-  if IM.Button("Save") then ApplyChanges() end
-  IM.SameLine(50)
-  if IM.Button("Edit") then EditSelected() end
-  IM.SameLine(100)
-  if IM.Button("Reset") then edit = CopyWorldObject(selected) end
-  IM.SameLine(150)
+  if ImGui.Button("Save") then ApplyChanges() end
+  ImGui.SameLine(50)
+  if ImGui.Button("Edit") then EditSelected() end
+  ImGui.SameLine(100)
+  if ImGui.Button("Reset") then edit = CopyWorldObject(selected) end
+  ImGui.SameLine(150)
   -- if IM.Button("Test") then
   --   for i, j in pairsByKeys(edit["StringValues"]) do
   --     print(tostring(i) .. ": " .. tostring(j))
   --   end
   -- end
 
-  IM.BeginCombo("Test")
+  ImGui.BeginCombo("Test")
 
-  IM.EndCombo()
+  ImGui.EndCombo()
 end
 
 ---Creates a partial copy of the properties of a WorldObject eligible for modification
@@ -434,7 +434,7 @@ end
 hud.showInBar = true
 hud.OnPreRender.Add(onPreRender);
 hud.OnRender.Add(onRender);
-hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
+hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
 
 -- subscribe to every incoming / outgoing "io"
 --game.World.OnObjectSelected.Add(OnSelect)
