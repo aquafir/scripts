@@ -18,8 +18,6 @@ local hud   = nil ---@type Hud|nil
 
 
 
-
-
 ----------------------STATE------------------------
 local scale = 0.05 ---@type number
 local color = 0x11EECCAA ---@type number|nil (AARRGGBB)
@@ -28,7 +26,7 @@ local color = 0x11EECCAA ---@type number|nil (AARRGGBB)
 
 ----------------------LOGIC------------------------
 
-
+local foo = 100
 
 
 -------------------RENDER EVENTS--------------------
@@ -39,15 +37,26 @@ local OnHudRender = function()
 
   local colorInputChanged, colorResult = IM.ColorPicker4("Color", IM.ColToVec4(color), ImGui.ImGuiColorEditFlags.AlphaBar)
   if colorInputChanged then color = IM.Vec4ToCol(colorResult) end
+
+  --If you set an alpha in the PreRender it applies to all script windows, so reset it after rendering
+  IM.PushStyleVar(ImGui.ImGuiStyleVar.Alpha, 1)
 end
 
 -- function OnRender2D()
 -- end
 
 -- Called before our window is registered
--- function OnPreRender()
---   ImGui.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize);
--- end
+function OnPreRender()
+  --Constrain resize dimensions
+  -- ImGui.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize);
+  
+  --Force a size / position in the center
+  IM.SetWindowSize(Vector2.new(300, 300))
+  IM.SetNextWindowPos(Vector2.new(IM.GetWindowViewport().Size.X/2-150, IM.GetWindowViewport().Size.Y/2-150))
+
+  --Set an alpha (make sure to remove after Render)
+  IM.PushStyleVar(ImGui.ImGuiStyleVar.Alpha, 0.5)
+end
 
 
 
@@ -59,11 +68,13 @@ function Init()
   -- True if you want it to start visible, false invisible
   hud.Visible = true
 
-  -- Size to fit
-  hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
-  -- Alternatively use a size range in prerender
-  -- hud.OnPreRender.Add(OnPreRender)
+  --Style
+  hud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
+                    --  + ImGui.ImGuiWindowFlags.NoDecoration     -- Borderless
+                    --  + ImGui.ImGuiWindowFlags.NoBackground     -- No BG
 
+  -- Alternatively use a size range in prerender
+  hud.OnPreRender.Add(OnPreRender)
   -- subscribe to events
   -- game.OnRender2D.Add(OnRender2D)
 

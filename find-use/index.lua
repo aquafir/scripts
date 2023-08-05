@@ -57,7 +57,11 @@ local OnHudRender = function()
   IM.SameLine()
   if IM.Button("Use Found") then
     for _, wo in pairs(found) do
+    -- for _, wo in pairs(game.Character.Inventory) do
       wo.Use()
+      -- game.Actions.VendorAddToSellList(wo.Id)
+      game.Actions.InvokeChat("/ub use " .. wo.Name)
+      sleep(200)
     end
   end
 
