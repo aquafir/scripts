@@ -38,8 +38,6 @@ local GetMatches = function()
   print("Searching...")
   found = {}
 
-  --Removing pairs like below loses code hints, not sure that matters
-  --for wo in game.Character.Inventory do
   for _, wo in pairs(game.Character.Inventory) do
     if IsMatch(find, wo) then
       print("Adding: " .. wo.Name)
@@ -57,12 +55,11 @@ local OnHudRender = function()
   ImGui.SameLine()
   if ImGui.Button("Use Found") then
     for _, wo in pairs(found) do
-    -- for _, wo in pairs(game.Character.Inventory) do
       wo.Use()
       -- game.Actions.VendorAddToSellList(wo.Id)
-      game.Actions.InvokeChat("/ub use " .. wo.Name)
-      sleep(200)
+      --game.Actions.InvokeChat("/ub use " .. wo.Name)
     end
+    print("All done?")
   end
 
   for _, wo in pairs(found) do
