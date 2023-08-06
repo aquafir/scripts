@@ -1,26 +1,14 @@
------------------------LIBS-------------------------
--- local ac = require("acclient")               -- 3d/2d graphics and coordinates
--- local fs = require("filesystem").GetScript() -- File system
--- local json = require("json")
--- json.encode()
-local IM     = require("imgui")
-local ImGui  = IM ~= nil and IM.ImGui or {}
-local views  = require("utilitybelt.views")
-local hud    = nil ---@type Hud|nil
+local IM = require("imgui")
+local ImGui = IM ~= nil and IM.ImGui or {}
+local views = require("utilitybelt.views")
+local hud = views.Huds.CreateHud("Inspector")
 local ltable = require('lua_table')
+--ltable.patch(table, ltable)
+--ltable.patch(_G, ltable) --environment
 
-
-
-----------------------CONFIG-----------------------
--- Window constraints
-local minWindowSize = Vector2.new(600, 675)
-local maxWindowSize = Vector2.new(1400, 900)
-
-
-
-
-
-----------------------STATE------------------------
+---------------------
+---- State ----
+---------------------
 ---The most recently appraised WorldObject
 ---@type WorldObject
 local selected = {}
@@ -48,6 +36,15 @@ local propTypes = {
   PropertyDataID = "DataValues"
 }
 
+--------------
+--- config ---
+--------------
+
+-- minumum window size limit
+local minWindowSize = Vector2.new(600, 675)
+
+-- maximum window size limit
+local maxWindowSize = Vector2.new(1400, 900)
 
 ---------------
 --- helpers ---
@@ -233,30 +230,29 @@ end
 
 ---UI for editing selected item
 function RenderSelected(weenie)
-  if selected == nil then
-    IM.Text("Nothing selected...")
-  else
-    weenie = selected
-    -- IM.Begin(weenie.Name .. "###tab_" .. tostring(weenie.Id))
-    --print("Render " .. weenie.Name)
-    -- IM.BeginChild(weenie.Id, IM.GetContentRegionAvail())
+  -- if weenie == nil then
+  --   IM.Text("Nothing selected...")
+  -- else
+  -- IM.Begin(weenie.Name .. "###tab_" .. tostring(weenie.Id))
+  -- --print("Render " .. weenie.Name)
+  -- IM.BeginChild(weenie.Id, IM.GetContentRegionAvail())
 
-    -- if weenie ~= nil then print(tostring(weenie.ObjectClass)) end
+  --if weenie ~= nil then print(tostring(weenie.ObjectClass)) end
 
-    RenderDefaultItem()
+  RenderDefaultItem()
 
-    ImGui.Separator()
-    RenderFilters()
+  ImGui.Separator()
+  RenderFilters()
 
-    ImGui.Separator()
-    RenderPropTabs()
+  -- ImGui.Separator()
+  -- RenderPropTabs()
 
-    -- ImGui.Separator()
-    -- RenderButtons()
+  -- ImGui.Separator()
+  -- RenderButtons()
 
-    -- IM.EndChild()
-    -- IM.End()
-  end
+  --   IM.EndChild()
+  -- IM.End()
+  -- end
 end
 
 ---todo
@@ -264,12 +260,10 @@ function RenderPlayerTabs()
   if ImGui.BeginTabItem("Attributes") then
     ImGui.BeginChild(selected.Id, ImGui.GetContentRegionAvail())
     for propId, propValue in pairs(selected.Attributes) do
-      ImGui.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue
-      .InitLevel)
+      ImGui.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue.InitLevel)
     end
     for propId, propValue in pairs(selected.Vitals) do
-      ImGui.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue
-      .InitLevel)
+      ImGui.Text(tostring(propId) .. ": " .. propValue.Base .. " - " .. propValue.Current .. " - " .. propValue.InitLevel)
     end
     ImGui.EndChild()
     ImGui.EndTabItem()
@@ -372,9 +366,16 @@ function pairsByKeys(t, f)
   return iter
 end
 
--------------------RENDER EVENTS--------------------
--- Called each time this hud should render.  Render controls here
-local OnHudRender = function()
+--------------------------
+--- hud event handlers ---
+--------------------------
+-- called before our window is registered. you can set window options here
+local onPreRender = function()
+  IM.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize)
+end
+
+-- called during the hud window render. draw your ui here
+local onRender = function()
   if game.State == ClientState.In_Game then
     -- if views ~= nil and hud == nil then
     --   hud = views.Huds.CreateHud("Inspector", 100686697)
@@ -385,36 +386,20 @@ local OnHudRender = function()
   else
     hud.Visible = false
   end
-  --If you set an alpha in the PreRender it applies to all script windows, so reset it after rendering
-  -- ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 1)
 end
 
--- function OnRender2D()
--- end
-
--- Called before our window is registered
-function OnPreRender()
-  --Constrain resize dimensions
-  ImGui.SetNextWindowSizeConstraints(minWindowSize, maxWindowSize);
-
-  --Force a size / position in the center
-  -- ImGui.SetWindowSize(Vector2.new(300, 300))
-  -- ImGui.SetNextWindowPos(Vector2.new(ImGui.GetWindowViewport().Size.X/2-150, ImGui.GetWindowViewport().Size.Y/2-150))
-
-  --Set an alpha (make sure to remove after Render)
-  -- ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 0.5)
-end
 
 ----------------------
 --- event handlers ---
 ----------------------
 ---When an object is selected create a copy of it's properties
 ---@param e ObjectSelectedEventArgs
-function OnSelect(e)
+local OnSelect = function(e)
   -- If the selected object isn't the same as the last selected...
   if selected ~= nil and selected.Id ~= e.ObjectId then
     -- Make sure it is appraised?
-    local result = await(game.Actions.ObjectAppraise(e.ObjectId).Await())
+    local result = await(game.Actions.ObjectAppraise(e.ObjectId))
+
     print("Selected " .. e.ObjectId)
     -- Create partial copy of selection to edit
     local weenie = game.World.Get(e.ObjectId)
@@ -423,7 +408,7 @@ function OnSelect(e)
 end
 
 local Appraise = function(e)
-  local result = game.Actions.ObjectAppraise(e.ObjectId)
+  local result = await(game.Actions.ObjectAppraise(e.ObjectId))
   if selected == nil and selected.Id == e.Data.ObjectId then
     print("Editing " .. e.Data.ObjectId)
     local weenie = game.World.Get(e.Data.ObjectId)
@@ -437,47 +422,32 @@ end
 --   print(itemInfo.Data.ObjectId)
 -- end
 
+------------------
+--- initialize ---
+------------------
+-- create a new hud, set options, and register for hud events
+--hud.Visible = false
+hud.showInBar = true
+hud.OnPreRender.Add(onPreRender);
+hud.OnRender.Add(onRender);
+hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
 
----------------------INIT/DISPOSE------------------------
-function Init()
-  hud = views.Huds.CreateHud("MyScript")
-  -- True if you want it to start visible, false invisible
-  hud.Visible = true
+-- subscribe to every incoming / outgoing "io"
+--game.World.OnObjectSelected.Add(OnSelect)
+-- game.Messages.Incoming.Item_SetAppraiseInfo.Add(Appraise)
+-- game.Messages.Outgoing.Item_Appraise.Add(RequestAppraise)
 
-  --Style
-  hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
-  --  + ImGui.ImGuiWindowFlags.NoDecoration     -- Borderless
-  --  + ImGui.ImGuiWindowFlags.NoBackground     -- No BG
+-- subscribe to scriptEnd event so we can tostring(message)
+-- all subscribed to events should be ubscribed with `event.remove(handler)`
+-- (since this is a `once` handler, it will automatically unsubscribe itself after being called once)
+game.OnScriptEnd.Once(function()
+  -- unsubscribe from any events we subscribed to
+  -- game.World.OnObjectSelected.Remove(OnSelect)
+  -- game.Messages.Incoming.Item_SetAppraiseInfo.Remove(Appraise)
+  --  game.Messages.Outgoing.Item_Appraise.Remove(RequestAppraise)
+  hud.OnPreRender.Remove(onPreRender);
+  hud.OnRender.Remove(onRender);
 
-  -- subscribe to events
-  game.World.OnObjectSelected.Add(OnSelect)
-
-  -- subscribe to hud events, with the handlers we defined above
-  hud.OnPreRender.Add(OnPreRender)
-  hud.OnRender.Add(OnHudRender)
-end
-
-function Dispose()
-  -- Unsubscribe from events
-  game.World.OnObjectSelected.Remove(OnSelect)
-
-  hud.OnPreRender.Remove(OnPreRender)
-
-  -- Destroy hud
-  if hud ~= nil then hud.Dispose() end
-end
-
--------------------------START------------------------------
-game.OnStateChanged.Add(function(evt)
-  -- Start on login
-  if evt.NewState == ClientState.In_Game then
-    Init()
-    -- Dispose on log out
-  elseif evt.NewState == ClientState.Logging_Out then
-    Dispose()
-  end
+  -- destroy hud
+  hud.Dispose();
 end)
--- ...or on script end
-game.OnScriptEnd.Once(Dispose)
--- Start up if in game when the script loads
-if game.State == ClientState.In_Game then Init() end
