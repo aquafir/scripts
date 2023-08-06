@@ -26,7 +26,7 @@ local color = 0x11EECCAA ---@type number|nil (AARRGGBB)
 
 ----------------------LOGIC------------------------
 
-local foo = 100
+
 
 
 -------------------RENDER EVENTS--------------------
