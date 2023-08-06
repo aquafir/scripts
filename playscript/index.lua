@@ -25,11 +25,19 @@ function PlayAll()
     --print(key, value)
     print("Playing script ", value)
     selected = key
-    ac.DecalD3D.PlayObjectScript(game.CharacterId, key, 1)
+    ac.DecalD3D.PlayObjectScript(AnimationTarget(), key, 1)
     sleep(animationInterval)
   end
 end
 
+--Use whatever the player has selected defaulting to the player
+function AnimationTarget() 
+  --print(tostring(game.World.Selected))
+  if game.World.Selected ~= nil then
+    return game.World.Selected.Id
+  end
+  return game.CharacterId
+end
 
 -------------------RENDER EVENTS--------------------
 -- Called each time this hud should render.  Render controls here
@@ -39,7 +47,7 @@ local OnHudRender = function()
   local valueChanged, newValue = ImGui.Combo("Script", selected - 1, animations, #animations)
   if valueChanged then 
     selected = newValue + 1
-    ac.DecalD3D.PlayObjectScript(game.CharacterId, ac.PScriptType.PS_AttribDownYellow, 1)
+    ac.DecalD3D.PlayObjectScript(AnimationTarget(), ac.PScriptType.PS_AttribDownYellow, 1)
     print("Playing ", animations[selected],  " -- ", selected) 
   end
 end
