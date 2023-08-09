@@ -83,6 +83,7 @@ function DrawBagIcon(s, wo)
     if ImGui.TextureButton(tostring(wo.Id), GetOrCreateTexture(wo), s.IconSize) then
         s.SelectedBag = wo.Id
     end
+    DrawBagContextMenu(wo)
 end
 
 function Sort(isAscending, a, b)
@@ -164,6 +165,35 @@ function DrawBag(s, items)
         ImGui.EndTable()
     else
         ImGui.EndChild()
+    end
+end
+
+---@param wo WorldObject
+function DrawBagContextMenu(wo)
+    if ImGui.BeginPopupContextItem() then
+        if ImGui.MenuItem("Drop") then wo.Drop() end
+        if ImGui.MenuItem("Give Selected") then
+            if game.World.Selected ~= nil then
+                wo.Give(game.World.Selected.Id)
+            else
+                print('Nothing selected')
+            end
+        end
+        if ImGui.MenuItem("Give Player") then
+            if game.World.Selected ~= nil and game.World.Selected.ObjectClass == ObjectClass.Player then
+                wo.Give(game.World.Selected.Id)
+            else
+                wo.Give(game.World.GetNearest(ObjectClass.Player).Id)
+            end
+        end
+        if ImGui.MenuItem("Give Vendor") then
+            if game.World.Selected ~= nil and game.World.Selected.ObjectClass == ObjectClass.Vendor then
+                wo.Give(game.World.Selected.Id)
+            else
+                wo.Give(game.World.GetNearest(ObjectClass.Vendor).Id)
+            end
+        end
+        ImGui.EndPopup()
     end
 end
 
