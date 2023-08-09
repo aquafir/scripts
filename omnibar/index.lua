@@ -1,6 +1,6 @@
 -----------------------LIBS-------------------------
--- local ac = require("acclient")               -- 3d/2d graphics and coordinates
 local fs = require("filesystem").GetScript() -- File system
+local sd = require("levenshtein")
 local IM = require("imgui")
 local ImGui = IM ~= nil and IM.ImGui or {}
 local views = require("utilitybelt.views")
@@ -13,6 +13,7 @@ local maxMatches = 5
 
 
 ----------------------STATE------------------------
+---@type string[]
 local commandText = fs.ReadLines("Commands.txt")
 print("Loaded commands: ", #commandText)
 
@@ -23,22 +24,84 @@ local commandFilter = ""
 local matches = {}
 
 ----------------------LOGIC------------------------
+-- Returns the Levenshtein distance between the two given strings
+function levenshtein(str1, str2)
+	local len1 = string.len(str1)
+	local len2 = string.len(str2)
+	local matrix = {}
+	local cost = 0
+	
+        -- quick cut-offs to save time
+	if (len1 == 0) then
+		return len2
+	elseif (len2 == 0) then
+		return len1
+	elseif (str1 == str2) then
+		return 0
+	end
+	
+        -- initialise the base matrix values
+	for i = 0, len1, 1 do
+		matrix[i] = {}
+		matrix[i][0] = i
+	end
+	for j = 0, len2, 1 do
+		matrix[0][j] = j
+	end
+	
+        -- actual Levenshtein algorithm
+	for i = 1, len1, 1 do
+		for j = 1, len2, 1 do
+			if (str1:byte(i) == str2:byte(j)) then
+				cost = 0
+			else
+				cost = 1
+			end
+			
+			matrix[i][j] = math.min(matrix[i-1][j] + 1, matrix[i][j-1] + 1, matrix[i-1][j-1] + cost)
+		end
+	end
+	
+        -- return the last value - this is the Levenshtein distance
+	return matrix[len1][len2]
+end
+
+function LevenshteinCompare(a, b)
+--  return sd.lev_iter(commandFilter, a) < sd.lev_iter(commandFilter, b)
+  return levenshtein(commandFilter, a) < levenshtein(commandFilter, b)
+end
+
 ---Finds matches for commandFilter
 function ApplyFilter()
   -- Case-insensitive searches such so one field to store desired text and the other a case-insensitive pattern
   local filter = case_insensitive_pattern(commandFilter)
   local matchCount = 1
-
   matches = {}
-  for c, i in commandText do
-      if (commandFilter == "" or tostring(c):find(filter)) then
-        --print("Accepting: " .. tostring(c))
-        matches[matchCount] = c
-        matchCount = matchCount + 1
 
-        if matchCount >= maxMatches then return end
-      end
+  print(levenshtein('abcD','abc'))
+  table.sort(commandText, LevenshteinCompare)
+  print('b')
+
+
+  for index, value in ipairs(commandText) do
+    print(index, ": ", value)    
   end
+
+  for c, i in commandText do
+    matches[matchCount] = c
+    matchCount = matchCount + 1
+    if matchCount >= maxMatches then return end
+  end
+
+  -- for c, i in commandText do
+  --     if (commandFilter == "" or tostring(c):find(filter)) then
+  --       --print("Accepting: " .. tostring(c))
+  --       matches[matchCount] = c
+  --       matchCount = matchCount + 1
+
+  --       if matchCount >= maxMatches then return end
+  --     end
+  -- end
 end
 
 ---Returns a case-insensitive version of input pattern

@@ -54,10 +54,7 @@ end
 -- Called each time this hud should render.  Render controls here
 local OnHudRender = function()
   ImGui.Text("Hello")
-
-  -- ImGui.mo
 end
-
 
 
 ---------------------INIT/DISPOSE------------------------
@@ -78,14 +75,6 @@ function Init()
 end
 
 function Dispose()
-  -- Unsubscribe from events
-  -- game.OnRender2D.Remove(OnRender2D)
-  -- hud.OnPreRender.Remove(OnPreRender)
-
-  -- Dispose of things like D3DObjs
-  -- if renderedObj ~= nil then renderedObj.Dispose() end
-  -- renderedObj = nil
-
   -- Destroy hud
   if hud ~= nil then hud.Dispose() end
 end
