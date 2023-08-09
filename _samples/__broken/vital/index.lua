@@ -23,12 +23,12 @@ end)
 local vitalHud = views.Huds.CreateHud("Vital UI###VitalUI")
 vitalHud.ShowInBar = false
 vitalHud.Visible = true
-vitalHud.WindowSettings = ImGui.ImGuiWindowFlags.NoInputs.AddFlags(
-  ImGui.ImGuiWindowFlags.NoBringToFrontOnFocus,
-  ImGui.ImGuiWindowFlags.NoTitleBar,
-  ImGui.ImGuiWindowFlags.NoBackground,
-  ImGui.ImGuiWindowFlags.NoFocusOnAppearing,
-  ImGui.ImGuiWindowFlags.NoScrollbar
+vitalHud.WindowSettings = IM.ImGuiWindowFlags.NoInputs.AddFlags(
+  IM.ImGuiWindowFlags.NoBringToFrontOnFocus,
+  IM.ImGuiWindowFlags.NoTitleBar,
+  IM.ImGuiWindowFlags.NoBackground,
+  IM.ImGuiWindowFlags.NoFocusOnAppearing,
+  IM.ImGuiWindowFlags.NoScrollbar
 )
 
 vitalHud.OnPreRender.Add(function ()

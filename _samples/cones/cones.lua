@@ -100,7 +100,7 @@ function Init()
   -- create our hud
   myHud = views.Huds.CreateHud("Cones")
   myHud.Visible = true;
-  myHud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
+  myHud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
 
   -- subscribe to hud events, with the handlers we defined above
   myHud.OnRender.Add(myHud_onRender)

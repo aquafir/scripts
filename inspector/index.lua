@@ -446,8 +446,8 @@ function Init()
 
   --Style
   hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
-  --  + ImGui.ImGuiWindowFlags.NoDecoration     -- Borderless
-  --  + ImGui.ImGuiWindowFlags.NoBackground     -- No BG
+  --  + IM.ImGuiWindowFlags.NoDecoration     -- Borderless
+  --  + IM.ImGuiWindowFlags.NoBackground     -- No BG
 
   -- subscribe to events
   game.World.OnObjectSelected.Add(OnSelect)

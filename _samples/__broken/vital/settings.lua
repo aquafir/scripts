@@ -200,7 +200,7 @@ local CreateSettingsHud = function()
   settingsHud = views.Huds.CreateHud("Vital Hud Settings")
   settingsHud.ShowInBar = false
   settingsHud.Visible = true
-  settingsHud.WindowSettings = ImGui.ImGuiWindowFlags.AlwaysAutoResize
+  settingsHud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize
 
   settingsHud.OnHide.Add(function()
     settingsHud.Dispose()

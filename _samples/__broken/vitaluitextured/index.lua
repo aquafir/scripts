@@ -16,11 +16,11 @@ local vitals = {
 local hud = views.Huds.CreateHud("Vital UI Demo###VitalUIDemo4")
 hud.ShowInBar = false
 hud.Visible = true
-hud.WindowSettings = ImGui.ImGuiWindowFlags.NoInputs.AddFlags(
-  ImGui.ImGuiWindowFlags.NoBringToFrontOnFocus,
-  ImGui.ImGuiWindowFlags.NoTitleBar,
-  ImGui.ImGuiWindowFlags.NoBackground,
-  ImGui.ImGuiWindowFlags.NoFocusOnAppearing
+hud.WindowSettings = IM.ImGuiWindowFlags.NoInputs.AddFlags(
+  IM.ImGuiWindowFlags.NoBringToFrontOnFocus,
+  IM.ImGuiWindowFlags.NoTitleBar,
+  IM.ImGuiWindowFlags.NoBackground,
+  IM.ImGuiWindowFlags.NoFocusOnAppearing
 )
 
 hud.OnPreRender.Add(function ()

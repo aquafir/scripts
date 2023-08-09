@@ -2,6 +2,8 @@ local views = require("utilitybelt.views")
 local ImGui = require("imgui")
 local im = ImGui.ImGui
 
+local selected = nil
+
 ---@class InventoryHud
 ---@field Hud Hud -- The backing imgui hud
 ---@field FilterText string -- The current filter text
@@ -17,7 +19,7 @@ local InventoryHud = {
   SelectedBag = game.CharacterId,
   columnFlags = {
     ImGui.ImGuiTableColumnFlags.WidthFixed,
-    ImGui.ImGuiTableColumnFlags.DefaultSort.AddFlags(ImGui.ImGuiTableColumnFlags.IsSorted),
+    ImGui.ImGuiTableColumnFlags.DefaultSort + ImGui.ImGuiTableColumnFlags.IsSorted,
     ImGui.ImGuiTableColumnFlags.None,
     ImGui.ImGuiTableColumnFlags.None
   }
@@ -104,7 +106,7 @@ function DrawBag(s, items)
   for i,k in ipairs(items) do table.insert(wos, k) end
 
   if not s.ShowIcons then
-    local flags = ImGui.ImGuiTableFlags.None.AddFlags(ImGui.ImGuiTableFlags.BordersInner,ImGui.ImGuiTableFlags.Resizable, ImGui.ImGuiTableFlags.RowBg, ImGui.ImGuiTableFlags.Reorderable, ImGui.ImGuiTableFlags.Hideable, ImGui.ImGuiTableFlags.ScrollY, ImGui.ImGuiTableFlags.Sortable)
+    local flags = ImGui.ImGuiTableFlags.None + ImGui.ImGuiTableFlags.BordersInner + ImGui.ImGuiTableFlags.Resizable +  ImGui.ImGuiTableFlags.RowBg + ImGui.ImGuiTableFlags.Reorderable + ImGui.ImGuiTableFlags.Hideable + ImGui.ImGuiTableFlags.ScrollY + ImGui.ImGuiTableFlags.Sortable
     im.BeginTable("items-table", 4, flags, im.GetContentRegionAvail())
     im.TableSetupColumn("###Icon", s.columnFlags[1], 16)
     im.TableSetupColumn("Name", s.columnFlags[2])
@@ -145,9 +147,12 @@ function DrawBag(s, items)
         im.TableNextRow()
         im.TableSetColumnIndex(0)
         local texture = GetOrCreateTexture(item)
-        im.TextureButton(tostring(item.Id), texture, Vector2.new(16, 16))
+        -- im.TextureButton(tostring(item.Id), texture, Vector2.new(16, 16)
+        if im.TextureButton(tostring(item.Id), texture, Vector2.new(16, 16)) then selected = item.Id end
         im.TableSetColumnIndex(1)
-        im.Text(item.Name)
+        --edit
+        if selected == item.Id then im.Text("**" .. item.Name .. "**") else
+        im.Text(item.Name) end
         im.TableSetColumnIndex(2)
         im.Text(tostring(item.Value(IntId.Value)))
         im.TableSetColumnIndex(3)
@@ -175,7 +180,7 @@ function InventoryHud:new(o)
   self.Hud = views.Huds.CreateHud("Inventory UI")
 
   self.Hud.Visible = true
-  self.Hud.WindowSettings = ImGui.ImGuiWindowFlags.NoScrollbar.AddFlags(ImGui.ImGuiWindowFlags.MenuBar)
+  self.Hud.WindowSettings = ImGui.ImGuiWindowFlags.NoScrollbar + ImGui.ImGuiWindowFlags.MenuBar
   
   self.Hud.OnPreRender.Add(function ()
     im.SetNextWindowSizeConstraints(Vector2.new(200, 300), Vector2.new(9999, 9999))
@@ -203,7 +208,7 @@ function InventoryHud:new(o)
 
     if self.ShowBags then
       im.BeginTable("layout", 2, ImGui.ImGuiTableFlags.BordersInner)
-      im.TableSetupColumn("bags", ImGui.ImGuiTableColumnFlags.NoHeaderLabel.AddFlags(ImGui.ImGuiTableColumnFlags.WidthFixed), self.IconSize.X)
+      im.TableSetupColumn("bags", ImGui.ImGuiTableColumnFlags.NoHeaderLabel + ImGui.ImGuiTableColumnFlags.WidthFixed, self.IconSize.X)
       im.TableSetupColumn("items", ImGui.ImGuiTableColumnFlags.NoHeaderLabel)
       im.TableNextColumn()
 
@@ -227,4 +232,4 @@ function InventoryHud:new(o)
   return o
 end
 
-return InventoryHud
+local backpack = InventoryHud:new({})

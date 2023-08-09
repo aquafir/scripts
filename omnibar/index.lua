@@ -1,43 +1,91 @@
 -----------------------LIBS-------------------------
 -- local ac = require("acclient")               -- 3d/2d graphics and coordinates
--- local fs = require("filesystem").GetScript() -- File system
+local fs = require("filesystem").GetScript() -- File system
 local IM = require("imgui")
 local ImGui = IM ~= nil and IM.ImGui or {}
 local views = require("utilitybelt.views")
 local hud   = nil ---@type Hud|nil
 
 
-
-
 ----------------------CONFIG-----------------------
--- Window constraints
--- local minWindowSize = Vector2.new(450, 250)
--- local maxWindowSize = Vector2.new(800, 1000)
-
-
+local maxMatches = 5
 
 
 
 ----------------------STATE------------------------
-local scale = 0.05 ---@type number
-local color = 0x11EECCAA ---@type number|nil (AARRGGBB)
+local commandText = fs.ReadLines("Commands.txt")
+print("Loaded commands: ", #commandText)
 
+---@type string|nil Text input narrowing down commands
+local commandFilter = ""
 
+---@type string[]
+local matches = {}
 
 ----------------------LOGIC------------------------
+---Finds matches for commandFilter
+function ApplyFilter()
+  -- Case-insensitive searches such so one field to store desired text and the other a case-insensitive pattern
+  local filter = case_insensitive_pattern(commandFilter)
+  local matchCount = 1
 
+  matches = {}
+  for c, i in commandText do
+      if (commandFilter == "" or tostring(c):find(filter)) then
+        --print("Accepting: " .. tostring(c))
+        matches[matchCount] = c
+        matchCount = matchCount + 1
 
+        if matchCount >= maxMatches then return end
+      end
+  end
+end
 
+---Returns a case-insensitive version of input pattern
+---@param pattern string
+---@return string
+function case_insensitive_pattern(pattern)
+  local p = pattern:gsub("(%%?)(.)", function(percent, letter)
+    if percent ~= "" or not letter:match("%a") then
+      return percent .. letter
+    else
+      return string.format("[%s%s]", letter:lower(), letter:upper())
+    end
+  end)
+  return p
+end
+-----------------RENDER COMPONENTS-----------------
+function RenderFilters()
+  local inputFlags = IM.ImGuiInputTextFlags.AutoSelectAll 
+  + IM.ImGuiInputTextFlags.AllowTabInput 
+  --+ IM.ImGuiInputTextFlags.EnterReturnsTrue
+  --ImGui.BeginChild("Filters", Vector2.new(ImGui.GetWindowWidth(), 40), true, IM.ImGuiWindowFlags.AlwaysAutoResize)
+  local filterTextChanged, newFilterText = ImGui.InputText("", commandFilter, 500, inputFlags)
+  if filterTextChanged then
+    commandFilter = newFilterText
+    ApplyFilter()
+    print(newFilterText)
+    -- if(newFilterText == true) then print("True!") end
+  end
+
+  --ImGui.SameLine(250)
+  --ImGui.EndChild()
+end
+
+function RenderCommands()
+  for key, value in pairs(matches) do
+    ImGui.Text(key .. ": " .. value)    
+  end
+end
 
 -------------------RENDER EVENTS--------------------
 -- Called each time this hud should render.  Render controls here
 local OnHudRender = function()
-  local scaleInputChanged, scaleResult = ImGui.DragFloat("Scale", scale, 0.001, 0.001, 1)
-  if scaleInputChanged then scale = scaleResult end
+  RenderFilters()
+  RenderCommands()
 
-  local colorInputChanged, colorResult = ImGui.ColorPicker4("Color", ImGui.ColToVec4(color), IM.ImGuiColorEditFlags.AlphaBar)
-  if colorInputChanged then color = ImGui.Vec4ToCol(colorResult) end
-
+  --if(ImGui.IsKeyPressed(IM.ImGuiKey.ModAlt))
+  if(ImGui.IsKeyPressed(IM.ImGuiKey.Enter)) then print("Enter!") end
   --If you set an alpha in the PreRender it applies to all script windows, so reset it after rendering
   ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 1)
 end
@@ -55,7 +103,7 @@ function OnPreRender()
   ImGui.SetNextWindowPos(Vector2.new(ImGui.GetWindowViewport().Size.X/2-150, ImGui.GetWindowViewport().Size.Y/2-150))
 
   --Set an alpha (make sure to remove after Render)
-  ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 0.5)
+  ImGui.PushStyleVar(IM.ImGuiStyleVar.Alpha, 0.8)
 end
 
 
@@ -70,7 +118,7 @@ function Init()
 
   --Style
   hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
-                    --  + IM.ImGuiWindowFlags.NoDecoration     -- Borderless
+                     + IM.ImGuiWindowFlags.NoDecoration     -- Borderless
                     --  + IM.ImGuiWindowFlags.NoBackground     -- No BG
 
   -- Alternatively use a size range in prerender

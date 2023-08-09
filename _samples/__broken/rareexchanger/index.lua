@@ -445,7 +445,7 @@ if ImGui ~= nil and views ~= nil then
   --- create hud
   local hud = views.Huds.CreateHud("RareExchanger", 100686697)
   hud.Visible = true
-  hud.WindowSettings = ImGui.ImGuiWindowFlags.MenuBar
+  hud.WindowSettings = IM.ImGuiWindowFlags.MenuBar
 
   --- show a tooltip if the previous ui item is IsItemHovered
   ---@param content string -- Tooltip text
@@ -459,9 +459,9 @@ if ImGui ~= nil and views ~= nil then
     im.SetNextWindowSizeConstraints(Vector2.new(450, 200), Vector2.new(9999, 9999));
     hud.Title = "RareExchanger - " .. Settings.LastProfile
     if profileHasChanges then
-      hud.WindowSettings = ImGui.ImGuiWindowFlags.MenuBar.AddFlags(ImGui.ImGuiWindowFlags.UnsavedDocument)
+      hud.WindowSettings = IM.ImGuiWindowFlags.MenuBar.AddFlags(IM.ImGuiWindowFlags.UnsavedDocument)
     else
-      hud.WindowSettings = ImGui.ImGuiWindowFlags.MenuBar
+      hud.WindowSettings = IM.ImGuiWindowFlags.MenuBar
     end
   end)
 

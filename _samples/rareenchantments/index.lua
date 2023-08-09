@@ -5,8 +5,8 @@ local ImGui = _ImGui.ImGui
 
 local hud = views.Huds.CreateHud("Rare Timers", 100676543)
 
-hud.WindowSettings = _ImGui.ImGuiWindowFlags.AlwaysAutoResize
-  + _ImGui.ImGuiWindowFlags.NoDecoration;
+hud.WindowSettings = _IM.ImGuiWindowFlags.AlwaysAutoResize
+  + _IM.ImGuiWindowFlags.NoDecoration;
 
 ---@type { [number]: Enchantment }
 local _rareEnchantments = {}
