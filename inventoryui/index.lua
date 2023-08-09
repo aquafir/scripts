@@ -2,8 +2,6 @@ local views = require("utilitybelt.views")
 local IM = require("imgui")
 local ImGui = IM.ImGui
 
-local selected = nil
-
 ---@class InventoryHud
 ---@field Hud Hud -- The backing imgui hud
 ---@field FilterText string -- The current filter text
@@ -25,8 +23,16 @@ local InventoryHud = {
     }
 }
 
-local _woTextures = {}
 
+function Sort(isAscending, a, b)
+    if isAscending then
+        return a < b
+    else
+        return a > b
+    end
+end
+
+local _woTextures = {}
 ---Get or create a managed texture for a world object
 ---@param wo WorldObject -- The WorldObject to get a texture for
 function GetOrCreateTexture(wo)
@@ -59,19 +65,9 @@ function DrawItemIcon(s, index, wo)
 
     local texture = GetOrCreateTexture(wo)
     ImGui.TextureButton(tostring(wo.Id), texture, s.IconSize)
-    if ImGui.IsItemHovered() then
-        ImGui.BeginTooltip()
-        ImGui.TextureButton(tostring(wo.Id) .. "-tt", texture, s.IconSize)
-        ImGui.SameLine()
-        ImGui.Text(wo.Name)
 
-        ImGui.Text("Value: " .. tostring(wo.Value(IntId.Value)))
-        ImGui.Text("ObjectClass: " .. tostring(wo.ObjectClass))
-
-        ImGui.EndTooltip()
-    end
-
-    DrawContextMenu(wo)
+    DrawItemTooltip(wo, texture, s)
+    DrawItemContextMenu(wo)
 
     s.DrawItemIndex = s.DrawItemIndex + 1
 end
@@ -83,21 +79,46 @@ function DrawBagIcon(s, wo)
     if ImGui.TextureButton(tostring(wo.Id), GetOrCreateTexture(wo), s.IconSize) then
         s.SelectedBag = wo.Id
     end
+    DrawBagItemTooltip(wo)
     DrawBagContextMenu(wo)
 end
 
-function Sort(isAscending, a, b)
-    if isAscending then
-        return a < b
-    else
-        return a > b
+---@param wo WorldObject
+function DrawBagContextMenu(wo)
+    if ImGui.BeginPopupContextItem() then
+        if ImGui.MenuItem("Drop") then wo.Drop() end
+        if ImGui.MenuItem("Give Selected") then
+            if game.World.Selected ~= nil then
+                wo.Give(game.World.Selected.Id)
+            else
+                print('Nothing selected')
+            end
+        end
+        if ImGui.MenuItem("Give Player") then
+            if game.World.Selected ~= nil and game.World.Selected.ObjectClass == ObjectClass.Player then
+                wo.Give(game.World.Selected.Id)
+            else
+                wo.Give(game.World.GetNearest(ObjectClass.Player).Id)
+            end
+        end
+        if ImGui.MenuItem("Give Vendor") then
+            if game.World.Selected ~= nil and game.World.Selected.ObjectClass == ObjectClass.Vendor then
+                wo.Give(game.World.Selected.Id)
+            else
+                wo.Give(game.World.GetNearest(ObjectClass.Vendor).Id)
+            end
+        end
+
+
+
+        ImGui.EndPopup()
     end
 end
 
 ---Draw a bag contents
 ---@param s InventoryHud
 ---@param items { [number]: WorldObject }
-function DrawBag(s, items)
+function DrawBagItems(s, items)
     local filterText = s.FilterText:lower()
 
     local wos = {}
@@ -147,9 +168,9 @@ function DrawBag(s, items)
                 ImGui.TableNextRow()
                 ImGui.TableSetColumnIndex(0)
                 local texture = GetOrCreateTexture(item)
-                if ImGui.TextureButton(tostring(item.Id), texture, Vector2.new(16, 16)) then selected = item.Id end
+                ImGui.TextureButton(tostring(item.Id), texture, Vector2.new(16, 16))
 
-                DrawContextMenu(item)
+                DrawItemContextMenu(item)
 
                 ImGui.TableSetColumnIndex(1)
                 ImGui.Text(item.Name)
@@ -168,37 +189,40 @@ function DrawBag(s, items)
     end
 end
 
+---Draws hovered details for Container
 ---@param wo WorldObject
-function DrawBagContextMenu(wo)
-    if ImGui.BeginPopupContextItem() then
-        if ImGui.MenuItem("Drop") then wo.Drop() end
-        if ImGui.MenuItem("Give Selected") then
-            if game.World.Selected ~= nil then
-                wo.Give(game.World.Selected.Id)
-            else
-                print('Nothing selected')
-            end
-        end
-        if ImGui.MenuItem("Give Player") then
-            if game.World.Selected ~= nil and game.World.Selected.ObjectClass == ObjectClass.Player then
-                wo.Give(game.World.Selected.Id)
-            else
-                wo.Give(game.World.GetNearest(ObjectClass.Player).Id)
-            end
-        end
-        if ImGui.MenuItem("Give Vendor") then
-            if game.World.Selected ~= nil and game.World.Selected.ObjectClass == ObjectClass.Vendor then
-                wo.Give(game.World.Selected.Id)
-            else
-                wo.Give(game.World.GetNearest(ObjectClass.Vendor).Id)
-            end
-        end
-        ImGui.EndPopup()
+function DrawBagItemTooltip(wo)
+    if ImGui.IsItemHovered() then
+        ImGui.BeginTooltip()
+        ImGui.Text(wo.Name)
+        ImGui.Text("Value: " .. tostring(wo.Value(IntId.Value)))
+        ImGui.Text("Burden: " .. wo.Burden)
+        local count = #wo.Items
+        ImGui.Text("Capacity: " .. count .. "/" .. wo.IntValues[IntId.ItemsCapacity])
+        ImGui.EndTooltip()
+    end
+end
+
+---Draws hovered details for WorldObject
+---@param s InventoryHud
+---@param texture any
+---@param wo WorldObject
+function DrawItemTooltip(wo, texture, s)
+    if ImGui.IsItemHovered() then
+        ImGui.BeginTooltip()
+        ImGui.TextureButton(tostring(wo.Id) .. "-tt", texture, s.IconSize)
+        ImGui.SameLine()
+        ImGui.Text(wo.Name)
+
+        ImGui.Text("Value: " .. tostring(wo.Value(IntId.Value)))
+        ImGui.Text("ObjectClass: " .. tostring(wo.ObjectClass))
+
+        ImGui.EndTooltip()
     end
 end
 
 ---@param wo WorldObject
-function DrawContextMenu(wo)
+function DrawItemContextMenu(wo)
     if ImGui.BeginPopupContextItem() then
         if ImGui.MenuItem("Split?") then print('todo') end
         if ImGui.MenuItem("Select") then wo.Select() end
@@ -241,6 +265,61 @@ function DrawContextMenu(wo)
     end
 end
 
+---@param s InventoryHud
+function DrawOptions(s)
+    if ImGui.BeginMenuBar() then
+        if ImGui.BeginMenu("Options") then
+            if ImGui.MenuItem("Show Bags", "", s.ShowBags) then
+                s.ShowBags = not s.ShowBags
+            end
+            if ImGui.MenuItem("Show Icons", "", s.ShowIcons) then
+                s.ShowIcons = not s.ShowIcons
+            end
+            ImGui.EndMenu()
+        end
+        ImGui.EndMenuBar()
+    end
+end
+
+---@param s InventoryHud
+function DrawFilter(s)
+    local didChange, newValue = ImGui.InputText("Filter", s.FilterText, 512)
+    if didChange then s.FilterText = newValue end
+end
+
+---@param s InventoryHud
+function DrawInventory(s)
+    s.DrawItemIndex = 0
+
+    if s.ShowBags then
+        --Create a 2-column table for bags and inventory
+        ImGui.BeginTable("layout", 2, IM.ImGuiTableFlags.BordersInner)
+        ImGui.TableSetupColumn("bags", IM.ImGuiTableColumnFlags.NoHeaderLabel + IM.ImGuiTableColumnFlags.WidthFixed,
+            s.IconSize.X)
+        ImGui.TableSetupColumn("items", IM.ImGuiTableColumnFlags.NoHeaderLabel)
+        ImGui.TableNextColumn()
+
+        --Draw player and containers
+        DrawBagIcon(s, game.Character.Weenie)
+        for i, bag in pairs(game.Character.Containers) do
+            DrawBagIcon(s, bag)
+        end
+
+        --Move to next column and render selected bag
+        ImGui.TableNextColumn()
+        local wo = game.World.Get(s.SelectedBag)
+        ImGui.Text("Selected Container: " .. tostring(wo))
+
+        DrawBagItems(s, wo.Items)
+
+        ImGui.EndTable()
+    else
+        --Render all items
+        DrawBagItems(s, game.Character.Weenie.AllItems)
+    end
+end
+
+
 ---Create a new InventoryHud instance
 ---@param o table -- Options
 ---@return InventoryHud InventoryHud -- A new InventoryHud instance
@@ -260,46 +339,9 @@ function InventoryHud:new(o)
     end)
 
     self.Hud.OnRender.Add(function()
-        if ImGui.BeginMenuBar() then
-            if ImGui.BeginMenu("Options") then
-                if ImGui.MenuItem("Show Bags", "", self.ShowBags) then
-                    self.ShowBags = not self.ShowBags
-                end
-                if ImGui.MenuItem("Show Icons", "", self.ShowIcons) then
-                    self.ShowIcons = not self.ShowIcons
-                end
-                ImGui.EndMenu()
-            end
-            ImGui.EndMenuBar()
-        end
-
-        local didChange, newValue = ImGui.InputText("Filter", self.FilterText, 512)
-        if didChange then self.FilterText = newValue end
-
-        self.DrawItemIndex = 0
-
-        if self.ShowBags then
-            ImGui.BeginTable("layout", 2, IM.ImGuiTableFlags.BordersInner)
-            ImGui.TableSetupColumn("bags", IM.ImGuiTableColumnFlags.NoHeaderLabel + IM.ImGuiTableColumnFlags.WidthFixed,
-                self.IconSize.X)
-            ImGui.TableSetupColumn("items", IM.ImGuiTableColumnFlags.NoHeaderLabel)
-            ImGui.TableNextColumn()
-
-            DrawBagIcon(self, game.Character.Weenie)
-            for i, bag in pairs(game.Character.Containers) do
-                DrawBagIcon(self, bag)
-            end
-
-            ImGui.TableNextColumn()
-            local wo = game.World.Get(self.SelectedBag)
-            ImGui.Text("Selected Container: " .. tostring(wo))
-
-            DrawBag(self, wo.Items)
-
-            ImGui.EndTable()
-        else
-            DrawBag(self, game.Character.Weenie.AllItems)
-        end
+        DrawOptions(self)
+        DrawFilter(self)
+        DrawInventory(self)
     end)
 
     return o
