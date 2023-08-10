@@ -1,11 +1,21 @@
 
 --https://github.com/swarn/fzy-lua
-local fuzzy = require('fzy_lua')
-local fs = require('filesystem').GetScript()
-local p = json.parse(fs.ReadText('levistras.json'))
-for index, value in pairs(p) do
-  print(index, value)
-end
+-- local fuzzy = require('fzy_lua')
+-- local fs = require('filesystem').GetScript()
+-- local p = json.parse(fs.ReadText('levistras.json'))
+-- for index, value in pairs(p) do
+--   print(index, value)
+-- end
+
+-- for index, value in ipairs(IntId.GetValues()) do
+--   print(index, value)
+-- end
+
+--local wo = game.Character.Weenie
+local wo = game.World.GetNearest(ObjectClass.Npc)
+print(wo.HasValue(StringId.GearPlatingName))     -- false
+print(wo.StringValues[StringId.GearPlatingName]) -- nil
+
 
 -- print(fuzzy.score('TEST','tttttestst', false))
 
