@@ -1,4 +1,4 @@
--- function ToHex(num) return "0x" .. string.format("%08x", num) end
+function ToHex(num) return "0x" .. string.format("%08x", num) end
 
 for i,armor in ipairs(game.Character.Equipment) do
   local armorMask = EquipMask.FromValue(armor.Value(IntId.CurrentWieldedLocation))
@@ -11,9 +11,9 @@ for i,armor in ipairs(game.Character.Equipment) do
 end
 
 --Enums are Userdata not number constants
-print(IntId.AccountRequirements.ToNumber())
--- print(IntId.FromValue(IntId.AccountRequirements.ToNumber()))
-print(EnumType.FromValue(IntId.AccountRequirements.ToNumber()))
+-- print(IntId.AccountRequirements.ToNumber())
+-- -- print(IntId.FromValue(IntId.AccountRequirements.ToNumber()))
+-- print(EnumType.FromValue(IntId.AccountRequirements.ToNumber()))
 
 -- EnumType.FromValue(number)
 -- EnumValue.ToNumber()

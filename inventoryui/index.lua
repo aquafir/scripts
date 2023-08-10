@@ -8,6 +8,7 @@ local intProps = {}
 for index, value in ipairs(IntId.GetValues()) do table.insert(intProps, value) end
 local stringProps = {}
 for index, value in ipairs(StringId.GetValues()) do table.insert(stringProps, value) end
+print('foo')
 
 ---@class InventoryHud
 ---@field Hud Hud -- The backing imgui hud
@@ -29,6 +30,15 @@ local InventoryHud = {
     FilterText = "",
     ShowBags = true,
     ShowIcons = false,
+    FilterObjectType = 0,
+    UseFilterType = false,
+    FilterIntId = 0,
+    FilterIntText = '',
+    UseFilterInt = false,
+    FilterStringId = 0,
+    FilterStringText = '',
+    UseFilterString = true,
+    ShowExtraFilters = true,
     IconSize = Vector2.new(24, 24),
     SelectedBag = game.CharacterId,
     columnFlags = {
@@ -38,7 +48,6 @@ local InventoryHud = {
         IM.ImGuiTableColumnFlags.None
     }
 }
-
 
 function Sort(isAscending, a, b)
     if isAscending then
@@ -307,32 +316,37 @@ function DrawFilter(s)
     --Extra filter section
     if not s.ShowExtraFilters then return end
 
+    local comboWidth = 150
+    local filterWidth = 200
     --ObjectType
-    ImGui.SetNextItemWidth(150)
+    ImGui.SetNextItemWidth(comboWidth)
     local didChange, newValue = ImGui.Combo("###ObjectTypeCombo", s.FilterObjectType - 1, typeProps, #typeProps)
     if didChange then s.FilterObjectType = newValue + 1 end
     ImGui.SameLine()
+    --ImGui.SameLine(comboWidth + filterWidth + 24)
     if ImGui.Checkbox('Class', s.UseFilterType) then s.UseFilterType = not s.UseFilterType end
 
     --PropertyInt
-    ImGui.SetNextItemWidth(150)
+    ImGui.SetNextItemWidth(comboWidth)
     local didChange, newValue = ImGui.Combo("###IntCombo", s.FilterIntId - 1, intProps, #intProps)
     if didChange then s.FilterIntId = newValue + 1 end
-    ImGui.SameLine()
-    if ImGui.Checkbox('Int', s.UseFilterInt) then s.UseFilterInt = not s.UseFilterInt end
+    ImGui.SetNextItemWidth(filterWidth)
     ImGui.SameLine()
     local didChange, newValue = ImGui.InputText("###IntFilter", s.FilterIntText, 512)
     if didChange then s.FilterIntText = newValue end
+    ImGui.SameLine()
+    if ImGui.Checkbox('Int', s.UseFilterInt) then s.UseFilterInt = not s.UseFilterInt end
 
     --PropertyString
-    ImGui.SetNextItemWidth(150)
+    ImGui.SetNextItemWidth(comboWidth)
     local didChange, newValue = ImGui.Combo("###StringCombo", s.FilterStringId - 1, stringProps, #stringProps)
     if didChange then s.FilterStringId = newValue + 1 end
-    ImGui.SameLine()
-    if ImGui.Checkbox('String', s.UseFilterString) then s.UseFilterString = not s.UseFilterString end
+    ImGui.SetNextItemWidth(filterWidth)
     ImGui.SameLine()
     local didChange, newValue = ImGui.InputText("###StringFilter", s.FilterStringText, 512)
     if didChange then s.FilterStringText = newValue end
+    ImGui.SameLine()
+    if ImGui.Checkbox('String', s.UseFilterString) then s.UseFilterString = not s.UseFilterString end
 end
 
 ---@param s InventoryHud
@@ -379,16 +393,19 @@ function IsFiltered(wo, s)
     if s.ShowExtraFilters and s.UseFilterType and wo.ObjectType ~= s.FilterObjectType then return true end
 
     --Filter by StringProp
-    if s.ShowExtraFilters and s.UseFilterString and s.FilterStringId > 0 then       
-        print(tostring(stringProps[s.FilterStringId]) .. "(" .. tostring(s.FilterStringText) .. ") - " .. filterText)
-        if  wo.HasValue(s.FilterStringId) ~= nil then
-            local filterText = s.FilterStringText:lower()
-            local propValue = wo.StringValues[s.FilterStringId]:lower()
-            print(filterText, '\n', propValue)
-            if filterText ~= "" and propValue:match(filterText) then return true end
+    if s.ShowExtraFilters and s.UseFilterString and s.FilterStringId > 0 then
+        local filterText = s.FilterStringText:lower()
+        if filterText ~= "" then
+            --Require property if filter present
+            if not wo.HasValue(stringProps[s.FilterStringId]) then return true end
+
+            local propValue = wo.StringValues[stringProps[s.FilterStringId]]:lower()
+            --print(filterText, ' - - ', propValue, filterText ~= "" and propValue:match(filterText) ~= nil)
+            if filterText ~= "" and not propValue:match(filterText) then return true end
         end
     end
-    
+    --Display prop?
+
     return false
 end
 
@@ -400,20 +417,6 @@ function InventoryHud:new(o)
     setmetatable(o, self)
     self.__index = self
     self.DrawItemIndex = 0
-
-    --ObjectType
-    self.FilterObjectType = 0
-    self.UseFilterType = false
-    --int
-    self.FilterIntId = 0
-    self.FilterIntText = ''
-    self.UseFilterInt = false
-    --string
-    self.FilterStringId = 0
-    self.FilterStringText = ''
-    self.UseFilterString = true
-
-    self.ShowExtraFilters = true
 
     self.Hud = views.Huds.CreateHud("Inventory UI")
 
