@@ -5,7 +5,6 @@ function GetMaxEncumberance()
 end
 
 function GetEncumberance()
-  --return game.Character.Weenie.Burden
   return game.Character.Weenie.IntValues[IntId.EncumbranceVal] / GetMaxEncumberance()
 end
 

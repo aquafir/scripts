@@ -2,11 +2,20 @@ local views = require("utilitybelt.views")
 local IM = require("imgui")
 local ImGui = IM.ImGui
 
+local objectTypes = {}
+for key, value in ipairs(ObjectType.GetValues()) do
+    objectTypes[key] = value
+end
+
+
 ---@class InventoryHud
 ---@field Hud Hud -- The backing imgui hud
----@field FilterText string -- The current filter text
+---@field FilterText string|nil -- The current filter text
+---@field FilterObjectType number|nil -- Selected ObjectType filter
+---@field UseFilterType boolean -- Filter by ObjectType
 ---@field ShowBags boolean -- If true, shows bags on the sidebar. If false, everything is in one bag
 ---@field ShowIcons boolean -- If true, draws an icon grid. If false, draws a table
+---@field ShowExtraFilters boolean -- If true, adds more filter options
 ---@field IconSize Vector2 -- The size of icons to draw
 ---@field SelectedBag number -- The id of the currently selected bag / container
 local InventoryHud = {
@@ -119,8 +128,6 @@ end
 ---@param s InventoryHud
 ---@param items { [number]: WorldObject }
 function DrawBagItems(s, items)
-    local filterText = s.FilterText:lower()
-
     local wos = {}
     for i, k in ipairs(items) do table.insert(wos, k) end
 
@@ -161,7 +168,8 @@ function DrawBagItems(s, items)
     end
 
     for i, item in ipairs(wos) do
-        if filterText == "" or item.Name:lower():match(filterText) then
+        if not IsFiltered(item, s)
+        then
             if s.ShowIcons then
                 DrawItemIcon(s, i, item)
             else
@@ -275,6 +283,9 @@ function DrawOptions(s)
             if ImGui.MenuItem("Show Icons", "", s.ShowIcons) then
                 s.ShowIcons = not s.ShowIcons
             end
+            if ImGui.MenuItem("Show Extra Filters", "", s.ShowExtraFilters) then
+                s.ShowExtraFilters = not s.ShowExtraFilters
+            end
             ImGui.EndMenu()
         end
         ImGui.EndMenuBar()
@@ -285,6 +296,15 @@ end
 function DrawFilter(s)
     local didChange, newValue = ImGui.InputText("Filter", s.FilterText, 512)
     if didChange then s.FilterText = newValue end
+
+    --Extra filter section
+    if not s.ShowExtraFilters then return end
+
+    ImGui.SetNextItemWidth(150)
+    local didChange, newValue = ImGui.Combo("", s.FilterObjectType - 1, objectTypes, #objectTypes)
+    if didChange then s.FilterObjectType = newValue + 1 end
+    ImGui.SameLine()
+    if ImGui.Checkbox('Class', s.UseFilterType) then s.UseFilterType = not s.UseFilterType end
 end
 
 ---@param s InventoryHud
@@ -319,6 +339,20 @@ function DrawInventory(s)
     end
 end
 
+---Returns true if an object is filtered given the current options and filters
+---@param wo WorldObject
+---@param s InventoryHud
+---@returns boolean
+function IsFiltered(wo, s)
+    local filterText = s.FilterText:lower()
+
+    --Filter by text
+    if filterText ~= "" and not wo.Name:lower():match(filterText) then return true end
+    --Filter by ObjectType
+    if s.ShowExtraFilters and s.UseFilterType and wo.ObjectType ~= s.FilterObjectType then return true end    
+
+    return false
+end
 
 ---Create a new InventoryHud instance
 ---@param o table -- Options
@@ -328,6 +362,10 @@ function InventoryHud:new(o)
     setmetatable(o, self)
     self.__index = self
     self.DrawItemIndex = 0
+
+    self.FilterObjectType = 0
+    self.UseFilterType = true
+    self.ShowExtraFilters = true
 
     self.Hud = views.Huds.CreateHud("Inventory UI")
 
