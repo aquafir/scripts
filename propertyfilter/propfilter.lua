@@ -1,6 +1,3 @@
------------------------LIBS-------------------------
--- local ac = require("acclient")               -- 3d/2d graphics and coordinates
--- local fs = require("filesystem").GetScript() -- File system
 local IM           = require("imgui")
 local ImGui        = IM ~= nil and IM.ImGui or {}
 local views        = require("utilitybelt.views")
@@ -17,9 +14,8 @@ local PropType     = {
   Float = 5,
   DataId = 6,
   InstanceId = 7,
-  -- ObjectType = 8,
-  -- ObjectClass = 9,
 }
+_G.PropType = PropType
 
 ---@class PropFilter
 ---@field SelectedIndex       number        Selected Property index
@@ -52,6 +48,7 @@ function PropFilter.new(type)
   ---@type PropFilter
   local self = setmetatable({}, PropFilter)
   self.Type = type or PropType.Unknown
+  print('Constructed ', self.Type)
   self:SetFilter(self.FilterText)
 
   return self
@@ -65,7 +62,6 @@ end
 function PropFilter:SetFilter(filter, wo)
   if filter ~= nil then self.FilterText = filter end
   if wo ~= nil then self.Weenie = wo end
-
   --Create regex
   if filter ~= nil and filter ~= "" then
     self.Regex = Regex.new(self.FilterText, RegexOptions.IgnoreCase) --+ RegexOptions.Compiled)
@@ -82,13 +78,15 @@ function PropFilter:SetFilter(filter, wo)
   -- self.LastKey = DateTime.UtcNow
   -- print('Updating after ', lapsed.Milliseconds)
   self:BuildPropList()
-
+  
   return self
 end
 
 ---@param self PropFilter
 function PropFilter:BuildPropList()
   self.Properties = {}
+  print(self.Type)
+  -- print('b')
   if self.Type == PropType.Bool then for value in BoolId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
   if self.Type == PropType.DataId then for value in DataId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
   if self.Type == PropType.Float then for value in FloatId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
@@ -124,10 +122,10 @@ function PropFilter:IsFiltered(value)
   --If the filter has a WorldObject and missing props are filtered check if Weenie has the given property
   if self.Weenie ~= nil and not self.IncludeMissingProps and not self.Weenie.HasValue(value) then return true end
   -- then print(value, self.Weenie.HasValue(value)) end
-
+  
   --Regex match (todo: pattern matching)
   if self.Regex ~= nil and self.UseRegex and not self.Regex.IsMatch(value) then return true end
-
+  
   return false
 end
 
@@ -181,88 +179,5 @@ function PropFilter:Draw(label)
   end
 
 end
-
----@type PropFilter[]
-local filters = {}
-table.insert(filters, PropFilter.new(PropType.String))
-table.insert(filters, PropFilter.new(PropType.Bool):SetFilter(nil, game.Character.Weenie)) -- Only Bools a player has
-table.insert(filters, PropFilter.new(PropType.Int):SetFilter('type|exp|cred'))
-table.insert(filters, PropFilter.new(PropType.Float):SetFilter(nil, game.Character.Weenie))
-table.insert(filters, PropFilter.new(PropType.Int64):SetFilter(nil, game.Character.Weenie))
-table.insert(filters, PropFilter.new(PropType.DataId):SetFilter(nil, game.Character.Weenie))
-table.insert(filters, PropFilter.new(PropType.InstanceId):SetFilter(nil, game.Character.Weenie))
-
-
-----------------------LOGIC------------------------
-
--- PF.SetupFilter(type, optText, optWo) --optional WO?
--- PF.Value() -- nil / value of right type if it exists
-
--------------------RENDER EVENTS--------------------
--- Called each time this hud should render.  Render controls here
-local OnHudRender = function()
-  for filter in filters do
-    filter:Draw()
-    --print(filter.Type, filter.SelectedIndex, filter.Properties, #filter.Properties)
-    -- local changed, value = ImGui.Combo('Combo###' .. filter.Type, filter.SelectedIndex - 1, filter.Properties,
-    --   #filter.Properties)
-    -- if changed then
-    --   filter.SelectedIndex = value + 1
-    --   print(filter:Value(game.Character.Weenie))
-    -- end
-  end
-end
--- Called before our window is registered
-function OnPreRender()
-end
-
----------------------INIT/DISPOSE------------------------
-function Init()
-  hud = views.Huds.CreateHud("MyScript")
-  -- True if you want it to start visible, false invisible
-  hud.Visible = true
-
-  --Style
-  hud.WindowSettings = IM.ImGuiWindowFlags.AlwaysAutoResize -- Size to fit
-  --  + IM.ImGuiWindowFlags.NoDecoration     -- Borderless
-  --  + IM.ImGuiWindowFlags.NoBackground     -- No BG
-
-  -- Alternatively use a size range in prerender
-  hud.OnPreRender.Add(OnPreRender)
-  -- subscribe to events
-  -- game.OnRender2D.Add(OnRender2D)
-
-  -- subscribe to hud events, with the handlers we defined above
-  hud.OnRender.Add(OnHudRender)
-end
-
-function Dispose()
-  -- Unsubscribe from events
-  -- game.OnRender2D.Remove(OnRender2D)
-  -- hud.OnPreRender.Remove(OnPreRender)
-
-  -- Dispose of things like D3DObjs
-  -- if renderedObj ~= nil then renderedObj.Dispose() end
-  -- renderedObj = nil
-
-  -- Destroy hud
-  if hud ~= nil then hud.Dispose() end
-end
-
--------------------------START------------------------------
-game.OnStateChanged.Add(function(evt)
-  -- Start on login
-  if evt.NewState == ClientState.In_Game then
-    Init()
-    -- Dispose on log out
-  elseif evt.NewState == ClientState.Logging_Out then
-    Dispose()
-  end
-end)
--- ...or on script end
-game.OnScriptEnd.Once(Dispose)
--- Start up if in game when the script loads
-if game.State == ClientState.In_Game then Init() end
-
 
 return PropFilter
