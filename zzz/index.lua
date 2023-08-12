@@ -28,6 +28,7 @@ local PropType     = {
 ---@field UseRegex            boolean       Uses FilterText as a Regex when true, pattern match when false
 ---@field private Weenie      WorldObject   Optional WorldObject used for value checks
 ---@field private FilterText  string        Optional filter
+-----@field private LastKey     DateTime      Todo, think about how to update so it doesn't lag
 ---@field Regex               Regex         Regex compiled when filter text updated
 ---@field Properties          string[]      Populated list of Enum values
 -- ---@field DrawFilter fun(s: PropFilter,  boolean)
@@ -70,23 +71,32 @@ function PropFilter:SetFilter(filter, wo)
   end
 
   --Handle different types of enums
-  if self.Type == PropType.Bool then
-    for value in BoolId.GetValues() do
-      if not self:IsFiltered(value, wo) then
-        table.insert(self.Properties, value)
-      end
-    end
-  end
-  if self.Type == PropType.DataId then for value in DataId.GetValues() do table.insert(self.Properties, value) end end
-  if self.Type == PropType.Float then for value in FloatId.GetValues() do table.insert(self.Properties, value) end end
-  if self.Type == PropType.InstanceId then for value in InstanceId.GetValues() do table.insert(self.Properties, value) end end
-  if self.Type == PropType.Int then for value in IntId.GetValues() do table.insert(self.Properties, value) end end
-  if self.Type == PropType.Int64 then for value in Int64Id.GetValues() do table.insert(self.Properties, value) end end
-  if self.Type == PropType.String then for value in StringId.GetValues() do table.insert(self.Properties, value) end end
+  if self.Type == PropType.Bool then for value in BoolId.GetValues() do if not self:IsFiltered(value, wo) then table
+            .insert(self.Properties, value) end end end
+  if self.Type == PropType.DataId then for value in DataId.GetValues() do if not self:IsFiltered(value, wo) then table
+            .insert(self.Properties, value) end end end
+  if self.Type == PropType.Float then for value in FloatId.GetValues() do if not self:IsFiltered(value, wo) then table
+            .insert(self.Properties, value) end end end
+  if self.Type == PropType.InstanceId then for value in InstanceId.GetValues() do if not self:IsFiltered(value, wo) then
+        table.insert(self.Properties, value) end end end
+  if self.Type == PropType.Int then for value in IntId.GetValues() do if not self:IsFiltered(value, wo) then table
+            .insert(self.Properties, value) end end end
+  if self.Type == PropType.Int64 then for value in Int64Id.GetValues() do if not self:IsFiltered(value, wo) then table
+            .insert(self.Properties, value) end end end
+  if self.Type == PropType.String then for value in StringId.GetValues() do if not self:IsFiltered(value, wo) then table
+            .insert(self.Properties, value) end end end
   -- if self.Type == PropType.ObjectClass then for value in ObjectClass.GetValues() do table.insert(self.Properties, value) end end
   -- if self.Type == PropType.ObjectType then for value in ObjectType.GetValues() do table.insert(self.Properties, value) end end
   --if self.Type == PropType.Unknown then  end
-  --print(self.Type, self.FilterText, #self.Properties, self.Properties)
+
+  return self
+end
+
+---Uses current filter to refresh Properties for other changes
+---@param self PropFilter
+---@return PropFilter
+function PropFilter:UpdateFilter()
+  self:SetFilter(self.FilterText,self.Weenie)
 
   return self
 end
@@ -108,27 +118,53 @@ function PropFilter:IsFiltered(value)
   if self.Weenie ~= nil and not self.IncludeMissingProps and not self.Weenie.HasValue(value) then return true end
   -- then print(value, self.Weenie.HasValue(value)) end
 
-  --If there's a regex
+  --Regex match (todo: pattern matching)
   if self.Regex ~= nil and self.UseRegex and not self.Regex.IsMatch(value) then return true end
-  --   if wo ~= nil --and not wo.HasValue(self.Properties[self.Selected]) then return true end
-  --   then
-  --print(value)
-  -- end
 
-  --TODO
   return false
+end
+
+---@param self PropFilter
+function PropFilter:Draw(label)
+  label = label or '###' .. tostring(self.Type)
+  --Todo: options for what to draw/labels
+  --print(self.Type, self.SelectedIndex, self.Properties, #self.Properties)
+  local changed, value = ImGui.Combo(#self.Properties .. label .. 'Combo', self.SelectedIndex - 1, self.Properties, #self.Properties)
+  if changed then
+    self.SelectedIndex = value + 1
+    --Todo: callback
+    print(self:Value())
+  end
+
+  --Change filter text
+  ImGui.SetNextItemWidth(200)
+  ImGui.SameLine()
+  local didChange, newValue = ImGui.InputText(label .. 'Filter', self.FilterText, 256)
+  if didChange then self:SetFilter(newValue) end
+
+  --Toggle missing props
+  ImGui.SameLine()
+  if ImGui.Checkbox('Include missing' .. label  .. 'IncMiss', self.IncludeMissingProps) then 
+    self.IncludeMissingProps = not self.IncludeMissingProps 
+    self:UpdateFilter()
+  end
+
+  --Set WorldObject to selected
+  ImGui.SameLine()
+  local name = 'Target'
+  if self.Weenie ~= nil then name = self.Weenie.Name end
+  if ImGui.Button(name .. label  .. 'Target') then 
+    if game.World.Selected ~= nil then self:SetFilter(nil, game.World.Selected)  print('Selected ', game.World.Selected.Name) end
+  end
+
+
 end
 
 ---@type PropFilter[]
 local filters = {}
-local boolFilter = PropFilter.new(PropType.Bool)
---boolFilter:SetFilter('nodraw|15day|rare', game.Character.Weenie)
-boolFilter:SetFilter('', game.Character.Weenie)
-print(#boolFilter.Properties)
-table.insert(filters, boolFilter)
---table.insert(filters, PropFilter.new(PropType.Bool))
--- table.insert(filters, PropFilter.new(PropType.Int))
--- table.insert(filters, PropFilter.new(PropType.String))
+table.insert(filters, PropFilter.new(PropType.String))
+table.insert(filters, PropFilter.new(PropType.Bool):SetFilter(nil, game.Character.Weenie)) -- Only Bools a player has
+table.insert(filters, PropFilter.new(PropType.Int):SetFilter('type|exp|cred'))
 
 
 ----------------------LOGIC------------------------
@@ -140,13 +176,14 @@ table.insert(filters, boolFilter)
 -- Called each time this hud should render.  Render controls here
 local OnHudRender = function()
   for filter in filters do
+    filter:Draw()
     --print(filter.Type, filter.SelectedIndex, filter.Properties, #filter.Properties)
-    local changed, value = ImGui.Combo('Combo###' .. filter.Type, filter.SelectedIndex - 1, filter.Properties,
-      #filter.Properties)
-    if changed then
-      filter.SelectedIndex = value + 1
-      print(filter:Value(game.Character.Weenie))
-    end
+    -- local changed, value = ImGui.Combo('Combo###' .. filter.Type, filter.SelectedIndex - 1, filter.Properties,
+    --   #filter.Properties)
+    -- if changed then
+    --   filter.SelectedIndex = value + 1
+    --   print(filter:Value(game.Character.Weenie))
+    -- end
   end
 end
 -- Called before our window is registered
