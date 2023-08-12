@@ -24,8 +24,18 @@ i’ve been thinking about making it able to ref other gitlab builds, but right 
 
 
 
-
+# ToDo
 
 you can define a module that can be imported, add awaitable actions, etc
 
 https://discord.com/channels/548626271492636675/639939469960544260/1104504933786587219
+
+
+
+* Eating input
+  * https://gitlab.com/utilitybelt/utilitybelt.service/-/blob/master/Views/HudManager.cs?ref_type=heads#L233
+  * https://gitlab.com/utilitybelt/utilitybelt.service/-/blob/master/UBService.cs?ref_type=heads#L258
+  * "Here's how you would forward that to scripts" https://gitlab.com/utilitybelt/utilitybelt.service/-/blob/master/UBService.cs?ref_type=heads#L394
+* How to access UI elements
+  * title###id
+* RegexOptions?
