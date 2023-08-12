@@ -145,7 +145,7 @@ function PropFilter:TypeName()
 end
 
 ---@param self PropFilter
-function PropFilter:Draw(label)
+function PropFilter:DrawCombo(label)
   label = label or '###' .. tostring(self.Type)
   --Todo: options for what to draw/labels
   --print(self.Type, self.SelectedIndex, self.Properties, #self.Properties)

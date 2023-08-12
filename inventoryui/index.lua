@@ -1,20 +1,35 @@
 local views = require("utilitybelt.views")
 local IM = require("imgui")
 local ImGui = IM.ImGui
+local pf = require("propfilter")
 
-local typeProps = {}
-for index, value in ipairs(ObjectType.GetValues()) do table.insert(typeProps, value) end
-local intProps = {}
-for index, value in ipairs(IntId.GetValues()) do table.insert(intProps, value) end
-local stringProps = {}
-for index, value in ipairs(StringId.GetValues()) do table.insert(stringProps, value) end
-print('foo')
+---@type PropFilter[]
+local propFilters = {}
+local callbackTest = pf.new(PropType.String)
+---@param self PropFilter
+callbackTest.Callback = function (self)
+    print('callback', self:TypeName())    
+end
+table.insert(propFilters, callbackTest)
+-- table.insert(propFilters, pf.new(PropType.String):SetFilter('', game.Character.Weenie))
+-- table.insert(propFilters, pf.new(PropType.Bool):SetFilter('', game.Character.Weenie))
+-- table.insert(propFilters, pf.new(PropType.Int))
+-- table.insert(propFilters, pf.new(PropType.Float))
+-- table.insert(propFilters, pf.new(PropType.Int64))
+-- table.insert(propFilters, pf.new(PropType.DataId))
+-- table.insert(propFilters, pf.new(PropType.InstanceId))
+--ObjectType filtering
+local otypeProps = {}
+for index, value in ipairs(ObjectType.GetValues()) do table.insert(otypeProps, value) end
+
+
 
 ---@class InventoryHud
 ---@field Hud Hud -- The backing imgui hud
 ---@field FilterText string|nil -- The current filter text
 ---@field FilterObjectType ObjectType|nil -- Selected ObjectType filter
 ---@field UseFilterType boolean -- Filter by ObjectType
+---@field FilterRegex Regex Regex from FilterText
 ---@field FilterIntId IntId|nil -- Selected IntId filter
 ---@field FilterIntText string|nil -- The current filter for Int properties
 ---@field UseFilterInt boolean -- Filter by Int
@@ -310,43 +325,53 @@ end
 
 ---@param s InventoryHud
 function DrawFilter(s)
+    --Basic name filter
     local didChange, newValue = ImGui.InputText("Filter", s.FilterText, 512)
-    if didChange then s.FilterText = newValue end
+    if didChange then 
+        s.FilterText = newValue 
+        s.FilterRegex = Regex.new(newValue, RegexOptions.Compiled + RegexOptions.IgnoreCase)
+    end
 
     --Extra filter section
     if not s.ShowExtraFilters then return end
 
     local comboWidth = 150
     local filterWidth = 200
+
+    for index, value in ipairs(propFilters) do
+        -- ImGui.SetNextItemWidth(comboWidth)
+        -- print('test', value:TypeName())
+        value:DrawCombo()
+    end
     --ObjectType
     ImGui.SetNextItemWidth(comboWidth)
-    local didChange, newValue = ImGui.Combo("###ObjectTypeCombo", s.FilterObjectType - 1, typeProps, #typeProps)
+    local didChange, newValue = ImGui.Combo("###ObjectTypeCombo", s.FilterObjectType - 1, otypeProps, #otypeProps)
     if didChange then s.FilterObjectType = newValue + 1 end
     ImGui.SameLine()
     --ImGui.SameLine(comboWidth + filterWidth + 24)
     if ImGui.Checkbox('Class', s.UseFilterType) then s.UseFilterType = not s.UseFilterType end
 
-    --PropertyInt
-    ImGui.SetNextItemWidth(comboWidth)
-    local didChange, newValue = ImGui.Combo("###IntCombo", s.FilterIntId - 1, intProps, #intProps)
-    if didChange then s.FilterIntId = newValue + 1 end
-    ImGui.SetNextItemWidth(filterWidth)
-    ImGui.SameLine()
-    local didChange, newValue = ImGui.InputText("###IntFilter", s.FilterIntText, 512)
-    if didChange then s.FilterIntText = newValue end
-    ImGui.SameLine()
-    if ImGui.Checkbox('Int', s.UseFilterInt) then s.UseFilterInt = not s.UseFilterInt end
+    -- --PropertyInt
+    -- ImGui.SetNextItemWidth(comboWidth)
+    -- local didChange, newValue = ImGui.Combo("###IntCombo", s.FilterIntId - 1, intProps, #intProps)
+    -- if didChange then s.FilterIntId = newValue + 1 end
+    -- ImGui.SetNextItemWidth(filterWidth)
+    -- ImGui.SameLine()
+    -- local didChange, newValue = ImGui.InputText("###IntFilter", s.FilterIntText, 512)
+    -- if didChange then s.FilterIntText = newValue end
+    -- ImGui.SameLine()
+    -- if ImGui.Checkbox('Int', s.UseFilterInt) then s.UseFilterInt = not s.UseFilterInt end
 
-    --PropertyString
-    ImGui.SetNextItemWidth(comboWidth)
-    local didChange, newValue = ImGui.Combo("###StringCombo", s.FilterStringId - 1, stringProps, #stringProps)
-    if didChange then s.FilterStringId = newValue + 1 end
-    ImGui.SetNextItemWidth(filterWidth)
-    ImGui.SameLine()
-    local didChange, newValue = ImGui.InputText("###StringFilter", s.FilterStringText, 512)
-    if didChange then s.FilterStringText = newValue end
-    ImGui.SameLine()
-    if ImGui.Checkbox('String', s.UseFilterString) then s.UseFilterString = not s.UseFilterString end
+    -- --PropertyString
+    -- ImGui.SetNextItemWidth(comboWidth)
+    -- local didChange, newValue = ImGui.Combo("###StringCombo", s.FilterStringId - 1, stringProps, #stringProps)
+    -- if didChange then s.FilterStringId = newValue + 1 end
+    -- ImGui.SetNextItemWidth(filterWidth)
+    -- ImGui.SameLine()
+    -- local didChange, newValue = ImGui.InputText("###StringFilter", s.FilterStringText, 512)
+    -- if didChange then s.FilterStringText = newValue end
+    -- ImGui.SameLine()
+    -- if ImGui.Checkbox('String', s.UseFilterString) then s.UseFilterString = not s.UseFilterString end
 end
 
 ---@param s InventoryHud
@@ -389,6 +414,7 @@ function IsFiltered(wo, s)
     --Filter by text
     local filterText = s.FilterText:lower()
     if filterText ~= "" and not wo.Name:lower():match(filterText) then return true end
+    if filterText ~= "" and not s.FilterRegex.IsMatch(wo.Name) then return true end
     --Filter by ObjectType
     if s.ShowExtraFilters and s.UseFilterType and wo.ObjectType ~= s.FilterObjectType then return true end
 

@@ -28,6 +28,7 @@ _G.PropType = PropType
 ---@field private Updating    boolean       Changed but not yet updated
 ---@field Regex               Regex         Regex compiled when filter text updated
 ---@field Properties          string[]      Populated list of Enum values
+-----@field ComboCallback       fun() 
 -- ---@field DrawFilter fun(s: PropFilter,  boolean)
 PropFilter         = {
   --Defaults
@@ -85,8 +86,6 @@ end
 ---@param self PropFilter
 function PropFilter:BuildPropList()
   self.Properties = {}
-  print(self.Type)
-  -- print('b')
   if self.Type == PropType.Bool then for value in BoolId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
   if self.Type == PropType.DataId then for value in DataId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
   if self.Type == PropType.Float then for value in FloatId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
@@ -95,7 +94,6 @@ function PropFilter:BuildPropList()
   if self.Type == PropType.Int64 then for value in Int64Id.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
   if self.Type == PropType.String then for value in StringId.GetValues() do if not self:IsFiltered(value, wo) then table.insert(self.Properties, value) end end end
 end
-
 
 ---Uses current filter to refresh Properties for other changes
 ---@param self PropFilter
@@ -144,40 +142,51 @@ function PropFilter:TypeName()
   return 'ERROR'
 end
 
+--column options
 ---@param self PropFilter
-function PropFilter:Draw(label)
+---@param label? string
+function PropFilter:DrawCombo(label)
   label = label or '###' .. tostring(self.Type)
+  local columns = 3
+  ImGui.BeginTable(label .. "table", columns, IM.ImGuiTableFlags.BordersInner)
+  ImGui.TableSetupColumn("combo", IM.ImGuiTableColumnFlags.NoHeaderLabel + IM.ImGuiTableColumnFlags.WidthFixed, 250)
+      ImGui.TableSetupColumn("filterText", IM.ImGuiTableColumnFlags.NoHeaderLabel)
+      ImGui.TableSetupColumn("enabled", IM.ImGuiTableColumnFlags.NoHeaderLabel)
+
   --Todo: options for what to draw/labels
-  --print(self.Type, self.SelectedIndex, self.Properties, #self.Properties)
+  -- print(self.Type, self.SelectedIndex, self.Properties, #self.Properties)
+  ImGui.TableNextColumn()
   local changed, value = ImGui.Combo(self:TypeName() .. '=' .. #self.Properties .. label .. 'Combo', self.SelectedIndex - 1, self.Properties, #self.Properties)
   if changed then 
     self.SelectedIndex = value + 1
-    --Todo: callback
-    print(self:Value())
-    -- print(tostring(self:Value()))
+    self:Callback()
   end
 
+
   --Change filter text
-  ImGui.SetNextItemWidth(200)
-  ImGui.SameLine()
+  ImGui.TableNextColumn()
   local didChange, newValue = ImGui.InputText(label .. 'Filter', self.FilterText, 256)
   if didChange then self:SetFilter(newValue) end
 
   --Toggle missing props
-  ImGui.SameLine()
+  ImGui.TableNextColumn()
   if ImGui.Checkbox('Include missing' .. label  .. 'IncMiss', self.IncludeMissingProps) then 
     self.IncludeMissingProps = not self.IncludeMissingProps 
     self:UpdateFilter()
   end
 
   --Set WorldObject to selected
-  ImGui.SameLine()
-  local name = 'Target'
-  if self.Weenie ~= nil then name = self.Weenie.Name end
-  if ImGui.Button(name .. label  .. 'Target') then 
-    if game.World.Selected ~= nil then self:SetFilter(nil, game.World.Selected)  print('Selected ', game.World.Selected.Name) end
-  end
+  -- ImGui.SameLine()
+  -- local name = 'Target'
+  -- if self.Weenie ~= nil then name = self.Weenie.Name end
+  -- if ImGui.Button(name .. label  .. 'Target') then 
+  --   if game.World.Selected ~= nil then self:SetFilter(nil, game.World.Selected)  print('Selected ', game.World.Selected.Name) end
+  -- end
 
+  ImGui.EndTable()
 end
+
+---Invoked in Draw
+function PropFilter:Callback() end
 
 return PropFilter
