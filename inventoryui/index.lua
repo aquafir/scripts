@@ -7,8 +7,8 @@ local pf = require("propfilter")
 local propFilters = {}
 local callbackTest = pf.new(PropType.String)
 ---@param self PropFilter
-callbackTest.Callback = function (self)
-    print('callback', self:TypeName())    
+callbackTest.Callback = function(self)
+    print('callback', self:TypeName())
 end
 table.insert(propFilters, callbackTest)
 -- table.insert(propFilters, pf.new(PropType.String):SetFilter('', game.Character.Weenie))
@@ -35,7 +35,7 @@ for index, value in ipairs(ObjectType.GetValues()) do table.insert(otypeProps, v
 ---@field UseFilterInt boolean -- Filter by Int
 ---@field FilterStringId StringId|nil --
 ---@field FilterStringText string|nil --
----@field UseFilterString boolean --
+---@field UsePropertyFilters boolean --
 ---@field ShowBags boolean -- If true, shows bags on the sidebar. If false, everything is in one bag
 ---@field ShowIcons boolean -- If true, draws an icon grid. If false, draws a table
 ---@field ShowExtraFilters boolean -- If true, adds more filter options
@@ -327,9 +327,13 @@ end
 function DrawFilter(s)
     --Basic name filter
     local didChange, newValue = ImGui.InputText("Filter", s.FilterText, 512)
-    if didChange then 
-        s.FilterText = newValue 
-        s.FilterRegex = Regex.new(newValue, RegexOptions.Compiled + RegexOptions.IgnoreCase)
+    if didChange then
+        s.FilterText = newValue
+        if newValue == "" then
+            s.FilterRegex = nil
+        else
+            s.FilterRegex = Regex.new(newValue, RegexOptions.Compiled + RegexOptions.IgnoreCase)
+        end
     end
 
     --Extra filter section
@@ -411,23 +415,28 @@ end
 ---@param s InventoryHud
 ---@returns boolean
 function IsFiltered(wo, s)
-    --Filter by text
-    local filterText = s.FilterText:lower()
-    if filterText ~= "" and not wo.Name:lower():match(filterText) then return true end
-    if filterText ~= "" and not s.FilterRegex.IsMatch(wo.Name) then return true end
+    --Filter by regex
+    if s.FilterRegex ~= nil then return not  s.FilterRegex.IsMatch(wo.Name) end
+
     --Filter by ObjectType
     if s.ShowExtraFilters and s.UseFilterType and wo.ObjectType ~= s.FilterObjectType then return true end
 
-    --Filter by StringProp
-    if s.ShowExtraFilters and s.UseFilterString and s.FilterStringId > 0 then
-        local filterText = s.FilterStringText:lower()
-        if filterText ~= "" then
-            --Require property if filter present
-            if not wo.HasValue(stringProps[s.FilterStringId]) then return true end
+    --Filter by Properties
+    if s.ShowExtraFilters and s.UsePropertyFilters then
+        for index, filter in ipairs(propFilters) do
+            if filter.Enabled and filter.Regex ~= nil then 
+                print(wo.Name, wo.Value(filter.Properties[filter.SelectedIndex]))
+                -- if not wo.HasValue(stringProps[s.FilterStringId]) then return true end
+                -- return not filter.Regex.IsMatch(wo.Name) 
+            
+            end
+            --todo
+            -- --Require property if filter present
+            -- if not wo.HasValue(stringProps[s.FilterStringId]) then return true end
 
-            local propValue = wo.StringValues[stringProps[s.FilterStringId]]:lower()
-            --print(filterText, ' - - ', propValue, filterText ~= "" and propValue:match(filterText) ~= nil)
-            if filterText ~= "" and not propValue:match(filterText) then return true end
+            -- local propValue = wo.StringValues[stringProps[s.FilterStringId]]:lower()
+            -- --print(filterText, ' - - ', propValue, filterText ~= "" and propValue:match(filterText) ~= nil)
+            -- if filterText ~= "" and not propValue:match(filterText) then return true end        end        
         end
     end
     --Display prop?
