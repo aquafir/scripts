@@ -3,25 +3,30 @@ local IM = require("imgui")
 local ImGui = IM.ImGui
 local pf = require("propfilter")
 
+--Todo: figure out inheritance to add on to the basic filter
+-- ---@class ValuePropFilter : PropFilter
+-- ---@field valueText     string
+-- ---@field valueRegex    Regex
+
 ---@type PropFilter[]
 local propFilters = {}
-local callbackTest = pf.new(PropType.String)
----@param self PropFilter
-callbackTest.Callback = function(self)
-    print('callback', self:TypeName())
+table.insert(propFilters, pf.new(PropType.String))
+table.insert(propFilters, pf.new(PropType.Bool))
+table.insert(propFilters, pf.new(PropType.Int))
+table.insert(propFilters, pf.new(PropType.Float))
+table.insert(propFilters, pf.new(PropType.Int64))
+table.insert(propFilters, pf.new(PropType.DataId))
+table.insert(propFilters, pf.new(PropType.InstanceId))
+
+
+for filter in propFilters do    
+    filter.valueText = ''
+    filter.valueRegex = nil
 end
-table.insert(propFilters, callbackTest)
--- table.insert(propFilters, pf.new(PropType.String):SetFilter('', game.Character.Weenie))
--- table.insert(propFilters, pf.new(PropType.Bool):SetFilter('', game.Character.Weenie))
--- table.insert(propFilters, pf.new(PropType.Int))
--- table.insert(propFilters, pf.new(PropType.Float))
--- table.insert(propFilters, pf.new(PropType.Int64))
--- table.insert(propFilters, pf.new(PropType.DataId))
--- table.insert(propFilters, pf.new(PropType.InstanceId))
+
 --ObjectType filtering
 local otypeProps = {}
 for index, value in ipairs(ObjectType.GetValues()) do table.insert(otypeProps, value) end
-
 
 
 ---@class InventoryHud
@@ -35,7 +40,7 @@ for index, value in ipairs(ObjectType.GetValues()) do table.insert(otypeProps, v
 ---@field UseFilterInt boolean -- Filter by Int
 ---@field FilterStringId StringId|nil --
 ---@field FilterStringText string|nil --
----@field UsePropertyFilters boolean --
+-- ---@field UsePropertyFilters boolean --
 ---@field ShowBags boolean -- If true, shows bags on the sidebar. If false, everything is in one bag
 ---@field ShowIcons boolean -- If true, draws an icon grid. If false, draws a table
 ---@field ShowExtraFilters boolean -- If true, adds more filter options
@@ -52,7 +57,8 @@ local InventoryHud = {
     UseFilterInt = false,
     FilterStringId = 0,
     FilterStringText = '',
-    UseFilterString = true,
+    -- UsePropertyFilters = true,
+    -- UseFilterString = true,
     ShowExtraFilters = true,
     IconSize = Vector2.new(24, 24),
     SelectedBag = game.CharacterId,
@@ -342,10 +348,24 @@ function DrawFilter(s)
     local comboWidth = 150
     local filterWidth = 200
 
-    for index, value in ipairs(propFilters) do
-        -- ImGui.SetNextItemWidth(comboWidth)
+    for index, filter in ipairs(propFilters) do
+        ImGui.SetNextItemWidth(comboWidth)
         -- print('test', value:TypeName())
-        value:DrawCombo()
+    --         local didChange, newValue = ImGui.InputText("###IntFilter", s.FilterIntText, 512)
+    -- if didChange then s.FilterIntText = newValue end
+
+        local didChange, newValue = ImGui.InputText("###Filter" .. index, filter.valueText, 300)
+        if didChange then
+            --Todo decide where to keep text/input.  Being lazy and adding it to filters
+            filter.valueText = newValue 
+            if newValue == "" then
+                filter.valueRegex = nil
+            else
+                filter.valueRegex = Regex.new(newValue, RegexOptions.Compiled + RegexOptions.IgnoreCase)
+            end
+        end
+        ImGui.SameLine()
+        filter:DrawCombo()
     end
     --ObjectType
     ImGui.SetNextItemWidth(comboWidth)
@@ -354,28 +374,6 @@ function DrawFilter(s)
     ImGui.SameLine()
     --ImGui.SameLine(comboWidth + filterWidth + 24)
     if ImGui.Checkbox('Class', s.UseFilterType) then s.UseFilterType = not s.UseFilterType end
-
-    -- --PropertyInt
-    -- ImGui.SetNextItemWidth(comboWidth)
-    -- local didChange, newValue = ImGui.Combo("###IntCombo", s.FilterIntId - 1, intProps, #intProps)
-    -- if didChange then s.FilterIntId = newValue + 1 end
-    -- ImGui.SetNextItemWidth(filterWidth)
-    -- ImGui.SameLine()
-    -- local didChange, newValue = ImGui.InputText("###IntFilter", s.FilterIntText, 512)
-    -- if didChange then s.FilterIntText = newValue end
-    -- ImGui.SameLine()
-    -- if ImGui.Checkbox('Int', s.UseFilterInt) then s.UseFilterInt = not s.UseFilterInt end
-
-    -- --PropertyString
-    -- ImGui.SetNextItemWidth(comboWidth)
-    -- local didChange, newValue = ImGui.Combo("###StringCombo", s.FilterStringId - 1, stringProps, #stringProps)
-    -- if didChange then s.FilterStringId = newValue + 1 end
-    -- ImGui.SetNextItemWidth(filterWidth)
-    -- ImGui.SameLine()
-    -- local didChange, newValue = ImGui.InputText("###StringFilter", s.FilterStringText, 512)
-    -- if didChange then s.FilterStringText = newValue end
-    -- ImGui.SameLine()
-    -- if ImGui.Checkbox('String', s.UseFilterString) then s.UseFilterString = not s.UseFilterString end
 end
 
 ---@param s InventoryHud
@@ -415,6 +413,9 @@ end
 ---@param s InventoryHud
 ---@returns boolean
 function IsFiltered(wo, s)
+    --Identify if needed?
+    --if not wo.HasAppraisalData then wo.Appraise() end
+
     --Filter by regex
     if s.FilterRegex ~= nil then return not  s.FilterRegex.IsMatch(wo.Name) end
 
@@ -422,21 +423,13 @@ function IsFiltered(wo, s)
     if s.ShowExtraFilters and s.UseFilterType and wo.ObjectType ~= s.FilterObjectType then return true end
 
     --Filter by Properties
-    if s.ShowExtraFilters and s.UsePropertyFilters then
+    if s.ShowExtraFilters then -- and s.UsePropertyFilters --just using them if showing
         for index, filter in ipairs(propFilters) do
-            if filter.Enabled and filter.Regex ~= nil then 
-                print(wo.Name, wo.Value(filter.Properties[filter.SelectedIndex]))
-                -- if not wo.HasValue(stringProps[s.FilterStringId]) then return true end
-                -- return not filter.Regex.IsMatch(wo.Name) 
-            
+            --print(filter:TypeName())
+            if filter.Enabled and filter.valueRegex ~= nil then 
+                local val = filter:Value(wo)
+                if val == nil or not filter.valueRegex.IsMatch(val) then return true end
             end
-            --todo
-            -- --Require property if filter present
-            -- if not wo.HasValue(stringProps[s.FilterStringId]) then return true end
-
-            -- local propValue = wo.StringValues[stringProps[s.FilterStringId]]:lower()
-            -- --print(filterText, ' - - ', propValue, filterText ~= "" and propValue:match(filterText) ~= nil)
-            -- if filterText ~= "" and not propValue:match(filterText) then return true end        end        
         end
     end
     --Display prop?

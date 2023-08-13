@@ -161,6 +161,16 @@ function PropFilter:Value()
 end
 
 ---@param self PropFilter
+---@param wo WorldObject
+---@return any # Value of SelectedIndex property if Weenie has it, nil if missing
+function PropFilter:Value(wo)
+  if wo == nil then return nil end
+  if not wo.HasValue(self.Properties[self.SelectedIndex]) then return nil end
+  return wo.Value(self.Properties[self.SelectedIndex])
+end
+
+
+---@param self PropFilter
 ---@param value any         Enum property value
 function PropFilter:IsFiltered(value)
   --If the filter has a WorldObject and missing props are filtered check if Weenie has the given property
@@ -244,7 +254,7 @@ end
 
 ---@param self PropFilter Starts checking if its time to rebuild Properties
 function PropFilter:CheckUpdate()
-  --print(self.Updating, (DateTime.UtcNow - self.LastKey).TotalSeconds)
+  -- print(self.Updating, (DateTime.UtcNow - self.LastKey).TotalSeconds)
   if not self.Updating then
     self.Updating = true
 
@@ -258,6 +268,7 @@ function PropFilter:CheckUpdate()
 
       self:BuildPropList()
       game.OnRender2D.Remove(self.updCheck)
+
     end)
   end
 end
